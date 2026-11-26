@@ -23,7 +23,7 @@ Regras aplicadas: consentimento (opt-in), descadastramento (opt-out bloqueia env
 
 ## 3. Inteligência artificial (Anthropic Claude) — Fases 04 e 08
 1. https://console.anthropic.com → API Keys → criar chave.
-2. `.env`: `ANTHROPIC_API_KEY=...` e `AI_MODEL` (padrão `claude-sonnet-5-5`).
+2. `.env`: `ANTHROPIC_API_KEY=...` e `AI_MODEL` (padrão `claude-opus-5-5`).
 A IA responde apenas com base no contexto cadastrado da própria empresa.
 
 ## 4. Banco de dados

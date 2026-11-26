@@ -39,10 +39,17 @@ Detecção de colunas · prévia sem gravar (novo/existente/repetido/inválido) 
 ## Fase 03 — E2E (4 cenários) — ✅ (total acumulado 26/26, Fases 01–02 reexecutadas)
 Importação XLSX com detecção, prévia e nova lista · CSV do Excel (ponto e vírgula, Windows-1252) · Google sem chave sem resultados inventados · vendedor bloqueado por URL (HTTP 307).
 
+## Fase 04 — Integração (11 cenários) — ✅ (total acumulado 61/61)
+Personalização de variáveis · rascunho numerado sem duplicar seleção · variável desconhecida recusada · edição troca a seleção · não inicia sem WhatsApp conectado · com conexão: inicia, ignora descadastrados/sem telefone, enfileira, pausa/retoma sem perda, cancela, arquiva · duplicação · programação exige data futura · salvar seleção como lista · modelos de script e IA sem chave · isolamento entre empresas.
+
+## Fase 04 — E2E (7 cenários) — ✅ (total acumulado 33/33, Fases 01–03 reexecutadas)
+Liberação de Campanhas pelo admin geral · nova campanha com lista, seleção, variáveis e pré-visualização · IA sem chave · contato manual dentro da campanha · iniciar bloqueado sem WhatsApp e rascunho salvo · listagem com indicadores, duplicar, arquivar · resultados e vínculo campanha ↔ contato.
+
 ## Erros encontrados e corrigidos
 1. Tentativas de login falhas eram gravadas dentro da transação revertida → bloqueio de força bruta nunca ativava. Corrigido: a transação sempre confirma e o erro é lançado depois.
 2. Redirecionamentos de permissão ocorriam após início do streaming (redirecionamento no cliente). Corrigido com guarda central no layout → HTTP 307 real.
 3. Com RLS, `INSERT ... RETURNING` em `users` falhava para admin da empresa (linha ainda sem vínculo). Corrigido gerando o UUID na aplicação.
+7. Indicadores da listagem de campanhas sobrepostos em telas de 1440 px. Corrigido com linha de indicadores em texto ("3 contatos | 0 enviados | …").
 6. Limite de contatos contava também contatos já existentes numa importação (bloqueio indevido). Corrigido: só contatos novos contam.
 5. Erros do PostgreSQL (ex.: nome de lista duplicado) chegavam crus aos serviços. Corrigido: `withScope` converte todo erro de banco em mensagem em português.
 4. Troca de ambiente do admin geral mantinha menu antigo → navegação completa após a troca.

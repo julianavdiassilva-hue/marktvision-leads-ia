@@ -325,6 +325,84 @@ async function main() {
         assert(res.status() === 307, `${url} => HTTP ${res.status()}`);
       }
     });
+
+    console.log("Fase 04 — central de campanhas");
+    await step("administrador geral libera Campanhas para a empresa", async () => {
+      await login(page, "admin", "admin-e2e-2026");
+      await page.goto(`${BASE}/admin/empresas`);
+      await page.getByRole("link", { name: "Refrigeração Pará" }).click();
+      await page.getByRole("switch", { name: "Campanhas", exact: true }).click();
+      await page.waitForFunction(() => document.querySelector('[role=switch][aria-label="Campanhas"]')?.getAttribute("aria-checked") === "true");
+      await page.waitForTimeout(600);
+    });
+    await step("nova campanha: nome, lista existente, seleção, script com variáveis e pré-visualização", async () => {
+      await login(page, "paula.ref", "paulasenha1");
+      await page.goto(`${BASE}/campanhas`);
+      await page.getByText("Nenhuma campanha ainda").waitFor();
+      await page.getByRole("link", { name: "NOVA CAMPANHA", exact: true }).click();
+      await page.fill("#campaign-name", "Prospecção de clínicas");
+      await page.getByRole("button", { name: "Avançar" }).click();
+      await page.getByRole("button", { name: "Lista existente" }).click();
+      await page.locator("li", { hasText: "Clínicas de Belém" }).getByRole("button", { name: "Usar esta lista" }).click();
+      await page.getByRole("heading", { name: "3. Seleção dos contatos" }).waitFor();
+      await page.getByText(/2 de 2 selecionados/).waitFor();
+      await page.getByRole("button", { name: "Avançar" }).click();
+      await page.fill("#campaign-body", "Olá ");
+      await page.getByRole("button", { name: "Primeiro nome" }).click();
+      await page.locator("#campaign-body").press("End");
+      await page.locator("#campaign-body").type(", somos da ");
+      await page.getByRole("button", { name: "Minha empresa" }).click();
+      await page.getByRole("combobox", { name: "Contato da pré-visualização" }).selectOption({ label: "Clínica Alfa" });
+      const prev = await page.getByTestId("preview").innerText();
+      assert(prev.includes("Olá Clínica, somos da Refrigeração Pará"), "pré-visualização incorreta: " + prev);
+      await page.screenshot({ path: `${SHOTS}/13-campanha-script.png`, fullPage: true });
+    });
+    await step("IA sem chave: mensagem clara (sem texto inventado)", async () => {
+      await page.getByLabel("Objetivo da mensagem").fill("oferecer manutenção de ar-condicionado");
+      await page.getByRole("button", { name: "Gerar com IA" }).click();
+      await page.getByRole("alert").filter({ hasText: "ANTHROPIC_API_KEY" }).waitFor();
+    });
+    await step("adiciona contato manualmente dentro da campanha", async () => {
+      await page.getByRole("button", { name: /Origem dos contatos/ }).click();
+      await page.getByRole("button", { name: "Adicionar manualmente" }).click();
+      await page.fill("#m-name", "Lead Manual"); await page.fill("#m-phone", "(91) 98444-0001");
+      await page.getByRole("button", { name: "Adicionar", exact: true }).click();
+      await page.getByText(/1 contato\(s\) adicionados à campanha/).waitFor();
+    });
+    await step("WhatsApp não conectado: iniciar bloqueado, rascunho salvo", async () => {
+      await page.getByRole("button", { name: /WhatsApp/ }).first().click();
+      await page.getByText(/Nenhum número de WhatsApp conectado/).waitFor();
+      await page.getByRole("button", { name: /Execução/ }).click();
+      assert(await page.getByRole("button", { name: "Iniciar campanha" }).isDisabled(), "iniciar habilitado sem WhatsApp");
+      await page.getByRole("main").getByRole("button", { name: "Salvar rascunho" }).last().click();
+      await page.getByText("Rascunho salvo.").waitFor();
+      await page.waitForURL(/\/campanhas\/[0-9a-f-]{36}\/editar/);
+    });
+    await step("central de campanhas: listagem horizontal com indicadores e ações", async () => {
+      await page.goto(`${BASE}/campanhas`);
+      const row = page.getByTestId("campanha-1");
+      await row.getByText("Prospecção de clínicas").waitFor();
+      await row.getByText("Rascunho").waitFor();
+      await row.getByText("Clínicas de Belém").waitFor();
+      const rowText = (await row.innerText()).replace(/\s+/g, " ");
+      assert(/\b3 contatos\b/.test(rowText), "total de contatos incorreto: " + rowText.slice(0, 300));
+      await row.getByRole("button", { name: "Duplicar" }).click();
+      await page.waitForURL(/\/campanhas\/[0-9a-f-]{36}\/editar/);
+      await page.goto(`${BASE}/campanhas`);
+      await page.getByTestId("campanha-2").getByText("Prospecção de clínicas (cópia)").waitFor();
+      await page.screenshot({ path: `${SHOTS}/14-campanhas.png` });
+      await page.getByTestId("campanha-2").getByRole("button", { name: "Arquivar" }).click();
+      await page.getByTestId("campanha-2").waitFor({ state: "detached" });
+      await page.goto(`${BASE}/campanhas?arquivadas=1`);
+      await page.getByTestId("campanha-2").waitFor();
+    });
+    await step("resultados da campanha e vínculo com o contato", async () => {
+      await page.goto(`${BASE}/campanhas`);
+      await page.getByTestId("campanha-1").getByRole("link", { name: "Resultados" }).click();
+      await page.getByText("Progresso dos envios").waitFor();
+      await page.getByRole("link", { name: "Lead Manual" }).click();
+      await page.locator("section", { hasText: "Campanhas" }).getByText("#1 Prospecção de clínicas").waitFor();
+    });
     await browser.close();
   } finally {
     try { process.kill(-server.pid!); } catch {}

@@ -81,6 +81,6 @@ export async function runImport(ctx: AuthContext, rows: MappedRow[], opts: {
     const r = await upsertContacts(db, ctx, companyId, valid, "import", { listId, ownerUserId: owner });
     await recordEvent(db, ctx, companyId, "import.completed", { entityType: "contact_list", entityId: listId },
       { file: opts.fileName ?? null, created: r.created, matched: r.matched, invalid: normalized.length - valid.length });
-    return { created: r.created, updated: r.matched, invalid: normalized.length - valid.length, listId };
+    return { created: r.created, updated: r.matched, invalid: normalized.length - valid.length, listId, contactIds: [...new Set(r.ids)] };
   });
 }

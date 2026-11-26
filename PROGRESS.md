@@ -55,6 +55,23 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Sem chave: mensagem clara, nenhum resultado inventado | ✅ | integração + E2E |
 | Aviso: telefone público ≠ consentimento | ✅ | E2E |
 
+## Fase 04 — ✅ concluída (26/11/2026)
+| Item | Status | Evidência |
+|---|---|---|
+| Central de campanhas em listagem horizontal compacta (nº, nome, lista, contatos, enviados, entregues, respostas, falhas, ignorados, convertidos, vendas, progresso, status) | ✅ | E2E |
+| Ações: iniciar, pausar, retomar, editar, duplicar, cancelar, resultados, arquivar/restaurar | ✅ | integração + E2E |
+| Botão destacado NOVA CAMPANHA; filtros por situação e busca; abas Ativas/Arquivadas | ✅ | E2E |
+| Assistente em 7 etapas na mesma tela (nome, origem, seleção, script, WhatsApp, atendimento, execução) | ✅ | E2E |
+| Origem: Google e planilha DENTRO da campanha, lista existente e cadastro manual | ✅ | E2E (lista, manual); Google/planilha reutilizam componentes testados na Fase 03 |
+| Seleção: todos/individual, filtro, excluir da campanha, editar contato, duplicidade impossível, salvar como lista | ✅ | integração + E2E |
+| Script: variáveis ({{primeiro_nome}} etc.), pré-visualização por contato, modelos salvos, gerar/melhorar com IA | ✅ / ⏳ IA aguarda chave | integração + E2E |
+| Numeração sequencial por empresa (com trava contra concorrência) | ✅ | integração |
+| Início exige WhatsApp CONECTADO — nenhum envio simulado | ✅ | integração + E2E |
+| Ao iniciar/retomar: descadastrados e sem telefone viram "Ignorado" com motivo | ✅ | integração |
+| Pausa devolve itens da fila a "pendente": nada se perde, nada é reenviado | ✅ | integração |
+| Programação com data futura (job agendado) | ✅ (execução do job na Fase 05) | integração |
+| Página de resultados com funil, progresso e situação por contato | ✅ | E2E |
+
 ## Infraestrutura
 | Item | Status |
 |---|---|
@@ -64,7 +81,6 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 ## Próximas fases
 | Módulo | Status |
 |---|---|
-| Campanhas e scripts | 🔶 tabelas prontas — Fase 04 |
 | WhatsApp Cloud API | 🔶 tabelas prontas — Fase 05 |
 | Conversas | 🔶 Fase 06 |
 | CRM / Equipe (indicadores, distribuição, metas) | 🔶 funil padrão criado automaticamente — Fase 07 |
@@ -72,6 +88,7 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Dashboard completo, metas, relatórios, exportação | ⏳ Fase 09 |
 
 ## Decisões registradas
+- IA: SDK oficial da Anthropic, modelo padrão `claude-opus-5-5` (variável AI_MODEL), esforço baixo para mensagens curtas, fallback automático no servidor habilitado (se o modelo recusar, outro responde).
 - Planilhas lidas no navegador com SheetJS 0.18.5 (a CDN oficial com versões novas é inacessível neste ambiente e a versão do npm tem vulnerabilidades ao ler arquivos maliciosos). Assim o servidor nunca processa o arquivo bruto: recebe só valores mapeados (limite 20.000 linhas) e normaliza/valida novamente. Reavaliar ao publicar: trocar para a versão da CDN do SheetJS.
 - Importação e pesquisa no Google não estão no padrão do vendedor; o administrador pode conceder individualmente.
 - Supabase Auth não utilizado (exige e-mail); autenticação própria com login simples.

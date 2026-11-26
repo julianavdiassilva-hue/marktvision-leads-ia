@@ -12,7 +12,7 @@ import { fmtInt } from "@/lib/format";
 import type { AnalyzedRow } from "@/server/services/imports";
 
 type Parsed = { fileName: string; headers: string[]; rows: string[][] };
-type Result = { created: number; updated: number; invalid: number; listId: string | null };
+type Result = { created: number; updated: number; invalid: number; listId: string | null; contactIds: string[] };
 
 /** Lê XLS/XLSX/CSV no navegador (o arquivo não é processado no servidor). */
 async function parseFile(file: File): Promise<Parsed> {
