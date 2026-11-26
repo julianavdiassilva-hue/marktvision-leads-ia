@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/* =========================================================
+   Identidade visual — Marktvision Leads IA
+   Fundo branco, verde como cor principal, textos escuros,
+   tipografia maior e alta legibilidade.
+   ========================================================= */
+@theme {
+  --color-brand: #008c48;
+  --color-brand-dark: #006b38;
+  --color-brand-light: #e8f5ec;
+  --color-brand-50: #f3faf5;
+  --color-surface: #f7f9f8;
+  --color-ink: #172b22;
+  --color-muted: #55665d;
+  --color-line: #e2e9e5;
+  --color-danger: #b42318;
+  --color-danger-light: #fdecea;
+  --color-warning: #9a5b00;
+  --color-warning-light: #fff4e0;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --radius-xl: 0.875rem;
+}
+
+html { font-size: 16px; }
+body {
+  background: #ffffff;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink placeholder:text-muted/70
+           outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/15 disabled:bg-surface;
+  }
+  .label { @apply mb-1.5 block text-[14px] font-semibold text-ink; }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[15px] font-semibold
+           transition select-none disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap;
+  }
+  .btn-sm { @apply px-3 py-1.5 text-[14px]; }
+  .btn-primary { @apply bg-brand text-white shadow-sm hover:bg-brand-dark focus-visible:ring-4 focus-visible:ring-brand/25; }
+  .btn-secondary { @apply border border-line bg-white text-ink hover:border-brand/40 hover:bg-brand-50; }
+  .btn-ghost { @apply text-brand-dark hover:bg-brand-light; }
+  .btn-danger { @apply border border-danger/30 bg-white text-danger hover:bg-danger-light; }
+  .panel { @apply rounded-xl border border-line bg-white; }
+  .table { @apply w-full text-left text-[15px]; }
+  .table th { @apply border-b border-line bg-surface px-4 py-3 text-[13px] font-semibold uppercase tracking-wide text-muted; }
+  .table td { @apply border-b border-line px-4 py-3.5 align-middle; }
+  .table tbody tr:last-child td { @apply border-b-0; }
+  .table tbody tr:hover td { @apply bg-brand-50/60; }
+}
