@@ -45,10 +45,20 @@ Personalização de variáveis · rascunho numerado sem duplicar seleção · va
 ## Fase 04 — E2E (7 cenários) — ✅ (total acumulado 33/33, Fases 01–03 reexecutadas)
 Liberação de Campanhas pelo admin geral · nova campanha com lista, seleção, variáveis e pré-visualização · IA sem chave · contato manual dentro da campanha · iniciar bloqueado sem WhatsApp e rascunho salvo · listagem com indicadores, duplicar, arquivar · resultados e vínculo campanha ↔ contato.
 
+## Fase 05 — Integração (20 cenários) — ✅ (total acumulado 81/81)
+A Graph API da Meta é substituída SOMENTE no teste por um simulador local que registra as chamadas, para validar a sequência oficial (código → token → WABA → registro/sincronização) e todos os fluxos. Cenários: sem credenciais da plataforma · vendedor bloqueado · coexistência sem registro + sincronização agendada · número novo com PIN criptografado · código expirado · mesmo número em outra empresa / reconexão · vendedores do número · modelos aprovados · disparo com modelo e parâmetros, opt-out ignorado, erro 131026 como falha · janela de 24h · retentativa 3x sem duplicar · pausa por desconexão · HMAC · status sem retroceder · resposta → conversa/campanha (idempotente) · SAIR + confirmação · lead novo distribuído ao vendedor do número · eco do celular, histórico e contatos sem telefone · isolamento · PARTNER_REMOVED e desconexão manual.
+
+## Fase 05 — E2E (4 cenários) — ✅ (total acumulado 37/37, Fases 01–04 reexecutadas)
+Módulo com botão de conexão e orientações · conexão manual validada na Meta (falha clara, nada simulado) · webhook recusa token/assinatura inválidos · vendedor bloqueado.
+
+## Pendente de validação real (credenciais externas)
+Embedded Signup e envio/recebimento reais dependem do app da Marktvision aprovado como Tech Provider na Meta e do domínio público (Render).
+
 ## Erros encontrados e corrigidos
 1. Tentativas de login falhas eram gravadas dentro da transação revertida → bloqueio de força bruta nunca ativava. Corrigido: a transação sempre confirma e o erro é lançado depois.
 2. Redirecionamentos de permissão ocorriam após início do streaming (redirecionamento no cliente). Corrigido com guarda central no layout → HTTP 307 real.
 3. Com RLS, `INSERT ... RETURNING` em `users` falhava para admin da empresa (linha ainda sem vínculo). Corrigido gerando o UUID na aplicação.
+8. Teste de campanha dependia da ordem de envio (contatos gravados no mesmo instante). Corrigido o teste; rodado 3x seguidas sem falha.
 7. Indicadores da listagem de campanhas sobrepostos em telas de 1440 px. Corrigido com linha de indicadores em texto ("3 contatos | 0 enviados | …").
 6. Limite de contatos contava também contatos já existentes numa importação (bloqueio indevido). Corrigido: só contatos novos contam.
 5. Erros do PostgreSQL (ex.: nome de lista duplicado) chegavam crus aos serviços. Corrigido: `withScope` converte todo erro de banco em mensagem em português.

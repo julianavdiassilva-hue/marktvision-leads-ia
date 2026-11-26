@@ -21,6 +21,8 @@ const draftSchema = z.object({
   whatsappConnectionId: z.preprocess((v) => (v === "" ? null : v), uuid.nullable().optional()),
   responseMode: z.enum(RESPONSE_MODES).default("human"),
   contactIds: z.array(uuid).max(50000).default([]),
+  templateId: z.preprocess((v) => (v === "" ? null : v), uuid.nullable().optional()),
+  templateParams: z.array(z.string().max(40)).max(20).default([]),
 });
 export type DraftInput = z.input<typeof draftSchema>;
 
@@ -57,6 +59,13 @@ export async function saveCampaign(ctx: AuthContext, raw: DraftInput, id?: strin
     if (i.listId && !(await db.maybeOne(`select 1 from contact_lists where id=$1 and company_id=$2`, [i.listId, companyId]))) throw notFound("Lista não encontrada.");
     if (i.scriptId && !(await db.maybeOne(`select 1 from scripts where id=$1 and company_id=$2`, [i.scriptId, companyId]))) throw notFound("Modelo não encontrado.");
     if (i.whatsappConnectionId && !(await db.maybeOne(`select 1 from whatsapp_connections where id=$1 and company_id=$2`, [i.whatsappConnectionId, companyId]))) throw notFound("Conexão de WhatsApp não encontrada.");
+    if (i.templateId) {
+      const t = await db.maybeOne<{ connection_id: string; status: string }>(`select connection_id, status from whatsapp_templates where id=$1 and company_id=$2`, [i.templateId, companyId]);
+      if (!t) throw notFound("Modelo de mensagem não encontrado.");
+      if (t.status !== "APPROVED") throw invalid("Este modelo ainda não foi aprovado pela Meta.");
+      if (i.whatsappConnectionId && t.connection_id !== i.whatsappConnectionId) throw invalid("O modelo escolhido pertence a outro número de WhatsApp.");
+    }
+    const settings = { templateParams: i.templateParams };
     let campaignId = id;
     let status = "draft";
     if (id) {
@@ -64,16 +73,16 @@ export async function saveCampaign(ctx: AuthContext, raw: DraftInput, id?: strin
       if (!EDITABLE.includes(c.status)) throw new AppError("CONFLICT", `Uma campanha "${CAMPAIGN_STATUS_LABEL[c.status]}" não pode ser editada. Duplique-a para reaproveitar.`);
       status = c.status;
       await db.exec(
-        `update campaigns set name=$3, list_id=$4, script_id=$5, message_body=$6, whatsapp_connection_id=$7, response_mode=$8 where id=$1 and company_id=$2`,
-        [id, companyId, i.name, i.listId ?? null, i.scriptId ?? null, i.messageBody ?? null, i.whatsappConnectionId ?? null, i.responseMode]);
+        `update campaigns set name=$3, list_id=$4, script_id=$5, message_body=$6, whatsapp_connection_id=$7, response_mode=$8, template_id=$9, settings = settings || $10 where id=$1 and company_id=$2`,
+        [id, companyId, i.name, i.listId ?? null, i.scriptId ?? null, i.messageBody ?? null, i.whatsappConnectionId ?? null, i.responseMode, i.templateId ?? null, settings]);
     } else {
       await db.query(`select pg_advisory_xact_lock(hashtext('campaign-number:' || $1))`, [companyId]);
       const { n } = await db.one<{ n: number }>(`select coalesce(max(number), 0) + 1 as n from campaigns where company_id = $1`, [companyId]);
       campaignId = randomUUID();
       await db.exec(
-        `insert into campaigns (id, company_id, number, name, list_id, script_id, message_body, whatsapp_connection_id, response_mode, created_by)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-        [campaignId, companyId, n, i.name, i.listId ?? null, i.scriptId ?? null, i.messageBody ?? null, i.whatsappConnectionId ?? null, i.responseMode, ctx.user.id]);
+        `insert into campaigns (id, company_id, number, name, list_id, script_id, message_body, whatsapp_connection_id, response_mode, created_by, template_id, settings)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        [campaignId, companyId, n, i.name, i.listId ?? null, i.scriptId ?? null, i.messageBody ?? null, i.whatsappConnectionId ?? null, i.responseMode, ctx.user.id, i.templateId ?? null, settings]);
       await recordEvent(db, ctx, companyId, "campaign.created", { campaignId, entityType: "campaign", entityId: campaignId }, { name: i.name });
     }
     // Seleção de contatos: em campanha pausada só é possível ACRESCENTAR (quem já recebeu nunca é removido nem reenviado)

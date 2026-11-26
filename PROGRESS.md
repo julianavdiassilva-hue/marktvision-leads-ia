@@ -72,6 +72,23 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Programação com data futura (job agendado) | ✅ (execução do job na Fase 05) | integração |
 | Página de resultados com funil, progresso e situação por contato | ✅ | E2E |
 
+## Fase 05 — ✅ concluída (26/11/2026) — envio real aguarda credenciais da Meta
+| Item | Status | Evidência |
+|---|---|---|
+| Conexão pelo próprio cliente: botão “Conectar WhatsApp” (Embedded Signup oficial, documentação conferida) | ✅ código / ⏳ requer Tech Provider | integração (Graph simulado no teste) + E2E |
+| Coexistência com o app WhatsApp Business (sem registro do número; sincronização de contatos e histórico em até 24h) | ✅ código / ⏳ validação real | integração |
+| Número novo somente API (registro com PIN criptografado) | ✅ código / ⏳ validação real | integração |
+| Token próprio por empresa, criptografado (AES-256-GCM); nenhum token compartilhado | ✅ | integração |
+| Vários números por empresa (limite do plano), reconectar, desconectar, excluir, testar, status | ✅ | integração + E2E |
+| Mesmo número não pode ser ligado a duas empresas | ✅ | integração |
+| Vendedores responsáveis por número + distribuição automática de conversas | ✅ | integração |
+| Modelos aprovados: sincronização e uso na campanha com mapeamento de parâmetros | ✅ | integração |
+| Fila: envio no ritmo por número, retentativa (3x) para erros temporários, nunca reenvia item interrompido, pausa automática se desconectado ou no limite mensal | ✅ | integração |
+| Janela de 24h respeitada (sem modelo, só quem tem conversa aberta) | ✅ | integração |
+| Webhooks: assinatura HMAC, idempotência, status (sem retroceder), respostas, opt-out (SAIR) com confirmação, mensagens do celular, histórico, contatos (inclusive sem telefone), desconexão pelo app | ✅ | integração + E2E |
+| Reprocessamento automático de webhooks com erro (até 5 tentativas) | ✅ | código |
+| Conexão manual (avançado) validada na Meta | ✅ | E2E |
+
 ## Infraestrutura
 | Item | Status |
 |---|---|
@@ -81,13 +98,14 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 ## Próximas fases
 | Módulo | Status |
 |---|---|
-| WhatsApp Cloud API | 🔶 tabelas prontas — Fase 05 |
 | Conversas | 🔶 Fase 06 |
 | CRM / Equipe (indicadores, distribuição, metas) | 🔶 funil padrão criado automaticamente — Fase 07 |
 | Contexto + Chatbot IA | 🔶 `ai_settings` criado por empresa — Fase 08 |
 | Dashboard completo, metas, relatórios, exportação | ⏳ Fase 09 |
 
 ## Decisões registradas
+- WhatsApp: somente integração oficial (Meta). Número pessoal não tem via oficial; orientação é migrar para WhatsApp Business e usar coexistência. Integrações não oficiais exigem autorização expressa.
+- Fila de processamento roda dentro do servidor web (instrumentation.ts) e pode rodar separada (`npm run worker`); seguro com vários processos (SKIP LOCKED).
 - IA: SDK oficial da Anthropic, modelo padrão `claude-opus-5-5` (variável AI_MODEL), esforço baixo para mensagens curtas, fallback automático no servidor habilitado (se o modelo recusar, outro responde).
 - Planilhas lidas no navegador com SheetJS 0.18.5 (a CDN oficial com versões novas é inacessível neste ambiente e a versão do npm tem vulnerabilidades ao ler arquivos maliciosos). Assim o servidor nunca processa o arquivo bruto: recebe só valores mapeados (limite 20.000 linhas) e normaliza/valida novamente. Reavaliar ao publicar: trocar para a versão da CDN do SheetJS.
 - Importação e pesquisa no Google não estão no padrão do vendedor; o administrador pode conceder individualmente.

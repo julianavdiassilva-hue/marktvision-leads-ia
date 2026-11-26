@@ -49,6 +49,13 @@ Política padrão das tabelas comerciais: `company_id = app_company_id() OR app_
 ## 0004 — RLS forçado
 `FORCE ROW LEVEL SECURITY` em todas as tabelas com RLS: o isolamento vale mesmo quando a aplicação usa o usuário dono das tabelas (hospedagens com um único usuário). Migrações e seed rodam com `app.system = on`.
 
+## 0005–0007 — WhatsApp
+- `whatsapp_connections`: `settings` (ritmo/minuto), `quality_rating`, `connection_mode` (cloud_api | coexistence | manual), `business_id`, `register_pin_encrypted`, `onboarding` (sincronizações da coexistência).
+- `whatsapp_connection_members`: vendedores responsáveis por número (RLS).
+- `contacts.wa_user_id`: identificador do usuário no WhatsApp (BSUID), único por empresa — contatos podem chegar sem telefone.
+- `messages.channel` (api | business_app | history) e `template_name`.
+- `webhook_events.attempts`: reprocessamento automático.
+
 ## Triggers
 - `set_updated_at` em tabelas editáveis.
 - `create_default_pipeline` (após inserir empresa): funil com 9 etapas (Novo lead … Venda realizada, Perdido) + `ai_settings`.

@@ -20,7 +20,7 @@ export const MAIN_NAV: NavItem[] = [
   { href: "/etiquetas", label: "Etiquetas", icon: "Tags", anyOf: ["tags"] },
   { href: "/chatbot", label: "Chatbot IA", icon: "Bot", anyOf: ["ai_chatbot"], phase: 8 },
   { href: "/contexto", label: "Contexto da empresa", icon: "BookOpen", anyOf: ["ai_chatbot"], phase: 8 },
-  { href: "/whatsapp", label: "WhatsApp Comercial", icon: "MessageCircle", anyOf: ["whatsapp"], phase: 5 },
+  { href: "/whatsapp", label: "WhatsApp Comercial", icon: "MessageCircle", anyOf: ["whatsapp"] },
   { href: "/equipe", label: "Equipe Comercial", icon: "UserCog", anyOf: ["sales_team"], adminOnly: true },
   { href: "/relatorios", label: "Relatórios", icon: "BarChart3", anyOf: ["reports"], phase: 9 },
   { href: "/configuracoes", label: "Configurações", icon: "Settings", anyOf: [] },

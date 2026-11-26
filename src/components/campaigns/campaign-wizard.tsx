@@ -22,13 +22,15 @@ type Script = { id: string; name: string; body: string };
 export type WizardInitial = {
   id?: string; status?: string; name: string; listId: string | null; scriptId: string | null; messageBody: string;
   whatsappConnectionId: string | null; responseMode: "human" | "ai" | "ai_then_human"; contacts: ContactLite[]; contactIds: string[];
+  templateId: string | null; templateParams: string[];
 };
+type Template = { id: string; connection_id: string; name: string; language: string; body: string; params: number };
 export type WizardPerms = { google: boolean; googleConfigured: boolean; import: boolean; lists: boolean; aiMessages: boolean; broadcasts: boolean; canAssign: boolean };
 
 const STEPS = ["Nome", "Origem dos contatos", "Seleção", "Script", "WhatsApp", "Atendimento", "Execução"];
 
-export function CampaignWizard({ initial, lists, team, scripts: initialScripts, connections, perms, companyName }: {
-  initial: WizardInitial; lists: (Opt & { contacts: number })[]; team: Opt[]; scripts: Script[]; connections: Conn[]; perms: WizardPerms; companyName: string;
+export function CampaignWizard({ initial, lists, team, scripts: initialScripts, connections, templates, perms, companyName }: {
+  initial: WizardInitial; lists: (Opt & { contacts: number })[]; team: Opt[]; scripts: Script[]; connections: Conn[]; templates: Template[]; perms: WizardPerms; companyName: string;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(initial.id ? 2 : 0);
@@ -42,6 +44,10 @@ export function CampaignWizard({ initial, lists, team, scripts: initialScripts, 
   const [scripts, setScripts] = useState(initialScripts);
   const [connId, setConnId] = useState<string | null>(initial.whatsappConnectionId ?? connections.find((c) => c.status === "connected")?.id ?? null);
   const [mode, setMode] = useState(initial.responseMode);
+  const [templateId, setTemplateId] = useState<string | null>(initial.templateId);
+  const [tplParams, setTplParams] = useState<string[]>(initial.templateParams);
+  const connTemplates = templates.filter((t) => t.connection_id === connId);
+  const tpl = connTemplates.find((t) => t.id === templateId) ?? null;
   const [origin, setOrigin] = useState<"google" | "import" | "list" | "manual">(perms.google ? "google" : perms.import ? "import" : "list");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
@@ -64,7 +70,8 @@ export function CampaignWizard({ initial, lists, team, scripts: initialScripts, 
     setStep(2);
   });
 
-  const payload = () => ({ name, listId, scriptId, messageBody: body, whatsappConnectionId: connId, responseMode: mode, contactIds: [...selected] });
+  const payload = () => ({ name, listId, scriptId, messageBody: body, whatsappConnectionId: connId, responseMode: mode, contactIds: [...selected],
+    templateId: tpl?.id ?? null, templateParams: tpl ? Array.from({ length: tpl.params }, (_, i) => tplParams[i] || "primeiro_nome") : [] });
   const save = async (silent = false) => {
     if (!name.trim()) { setStep(0); setMsg({ ok: false, text: "Informe o nome da campanha." }); return null; }
     const r = await saveCampaignAction(payload(), campaignId);
@@ -82,7 +89,7 @@ export function CampaignWizard({ initial, lists, team, scripts: initialScripts, 
   });
 
   const selectedContacts = useMemo(() => [...selected].map((id) => pool.get(id)).filter(Boolean) as ContactLite[], [selected, pool]);
-  const done = [!!name.trim(), pool.size > 0, selected.size > 0, !!body.trim(), !!connId, true, false];
+  const done = [!!name.trim(), pool.size > 0, selected.size > 0, !!body.trim() || !!tpl, !!connId, true, false];
 
   return (
     <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
@@ -160,7 +167,7 @@ export function CampaignWizard({ initial, lists, team, scripts: initialScripts, 
         {step === 4 && (
           <StepBox title="5. WhatsApp" desc="Escolha o número conectado que fará os envios desta campanha.">
             {connections.length === 0 ? (
-              <Alert tone="amber">Nenhum número de WhatsApp conectado. A conexão pela API oficial da Meta é feita em <Link href="/whatsapp" className="underline">WhatsApp Comercial</Link> (Fase 05). Você pode salvar o rascunho e iniciar depois.</Alert>
+              <Alert tone="amber">Nenhum número de WhatsApp conectado. Conecte em <Link href="/whatsapp" className="underline">WhatsApp Comercial</Link> pelo botão “Conectar WhatsApp”. Você pode salvar o rascunho e iniciar depois.</Alert>
             ) : (
               <div className="space-y-2">
                 {connections.map((c) => (
@@ -171,6 +178,33 @@ export function CampaignWizard({ initial, lists, team, scripts: initialScripts, 
                     <Badge tone={c.status === "connected" ? "green" : "red"}>{c.status === "connected" ? "Conectado" : "Desconectado"}</Badge>
                   </label>
                 ))}
+              </div>
+            )}
+            {connId && (
+              <div className="mt-6 rounded-xl border border-line bg-surface p-4">
+                <p className="text-[16px] font-bold">Modelo aprovado pela Meta</p>
+                <p className="mb-3 mt-1 text-[14px] text-muted">Para iniciar conversa com quem não falou com você nas últimas 24h, a Meta exige um modelo aprovado. Sem modelo, a mensagem do Script só é enviada a quem tem conversa aberta (janela de 24h); os demais ficam como “Ignorado”.</p>
+                {connTemplates.length === 0 ? <p className="text-[14px] text-warning">Nenhum modelo aprovado neste número. Crie no WhatsApp Manager da Meta e clique em “Sincronizar modelos” em WhatsApp Comercial.</p> : (
+                  <>
+                    <select className="input" aria-label="Modelo aprovado" value={templateId ?? ""} onChange={(e) => { setTemplateId(e.target.value || null); setTplParams([]); }}>
+                      <option value="">Não usar modelo (somente janela de 24h)</option>
+                      {connTemplates.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.language})</option>)}
+                    </select>
+                    {tpl && (
+                      <div className="mt-3">
+                        <p className="whitespace-pre-wrap rounded-lg bg-white p-3 text-[15px]">{tpl.body}</p>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          {Array.from({ length: tpl.params }, (_, i) => (
+                            <label key={i} className="flex items-center gap-2 text-[14.5px]"><span className="w-12 font-mono font-semibold">{`{{${i + 1}}}`}</span>
+                              <select className="input py-2" aria-label={`Parâmetro ${i + 1}`} value={tplParams[i] ?? "primeiro_nome"} onChange={(e) => { const p = [...tplParams]; p[i] = e.target.value; setTplParams(p); }}>
+                                {TEMPLATE_VARS.map((v) => <option key={v.key} value={v.key}>{v.label}</option>)}
+                              </select></label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </StepBox>
@@ -195,7 +229,7 @@ export function CampaignWizard({ initial, lists, team, scripts: initialScripts, 
         {step === 6 && (
           <ExecutionStep checks={[
             ["Nome", !!name.trim(), name || "—"], ["Contatos selecionados", selected.size > 0, fmtInt(selected.size)],
-            ["Mensagem", !!body.trim(), body ? `${body.length} caracteres` : "não escrita"],
+            ["Mensagem", !!body.trim() || !!tpl, tpl ? `modelo ${tpl.name}` : body ? `${body.length} caracteres` : "não escrita"],
             ["WhatsApp", !!connId && connections.find((c) => c.id === connId)?.status === "connected", connections.find((c) => c.id === connId)?.display_name ?? "não selecionado"],
             ["Disparos liberados no plano", perms.broadcasts, perms.broadcasts ? "sim" : "não"],
           ]} pending={pending} status={initial.status ?? "draft"} onSave={() => start(async () => { await save(); })}

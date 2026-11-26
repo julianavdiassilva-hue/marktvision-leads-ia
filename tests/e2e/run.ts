@@ -403,6 +403,41 @@ async function main() {
       await page.getByRole("link", { name: "Lead Manual" }).click();
       await page.locator("section", { hasText: "Campanhas" }).getByText("#1 Prospecção de clínicas").waitFor();
     });
+
+    console.log("Fase 05 — WhatsApp Comercial");
+    await step("admin geral libera WhatsApp; módulo mostra conexão pelo cliente e orientações", async () => {
+      await login(page, "admin", "admin-e2e-2026");
+      await page.goto(`${BASE}/admin/empresas`);
+      await page.getByRole("link", { name: "Refrigeração Pará" }).click();
+      await page.getByRole("switch", { name: "WhatsApp Comercial", exact: true }).click();
+      await page.waitForFunction(() => document.querySelector('[role=switch][aria-label="WhatsApp Comercial"]')?.getAttribute("aria-checked") === "true");
+      await page.waitForTimeout(600);
+      await login(page, "paula.ref", "paulasenha1");
+      await page.goto(`${BASE}/whatsapp`);
+      await page.getByRole("button", { name: /Conectar WhatsApp Business do celular/ }).waitFor();
+      await page.getByText(/Provedor de Tecnologia na Meta/).waitFor();
+      assert(await page.getByRole("button", { name: /Conectar WhatsApp Business do celular/ }).isDisabled(), "botão ativo sem configuração da plataforma");
+      await page.getByText(/Números pessoais/).waitFor();
+      await page.screenshot({ path: `${SHOTS}/15-whatsapp.png`, fullPage: true });
+    });
+    await step("conexão manual valida na Meta (sem simular): falha clara sem acesso", async () => {
+      await page.getByRole("button", { name: "Conexão manual (avançado)" }).click();
+      await page.fill("#mc-displayName", "Teste"); await page.fill("#mc-phoneNumberId", "123456789"); await page.fill("#mc-accessToken", "token-invalido-de-teste-123");
+      await page.getByRole("button", { name: "Validar na Meta e conectar" }).click();
+      await page.getByRole("alert").filter({ hasText: /Meta/ }).waitFor({ timeout: 40000 });
+      await page.getByText("Nenhum número conectado").waitFor();
+    });
+    await step("webhook: verificação e assinatura obrigatórias", async () => {
+      const v = await page.request.get(`${BASE}/api/webhooks/whatsapp?hub.mode=subscribe&hub.verify_token=errado&hub.challenge=123`);
+      assert(v.status() === 403, "verificação aceitou token errado: " + v.status());
+      const p = await page.request.post(`${BASE}/api/webhooks/whatsapp`, { data: { object: "whatsapp_business_account", entry: [] } });
+      assert([401, 503].includes(p.status()), "webhook aceitou evento sem assinatura: " + p.status());
+    });
+    await step("vendedor não acessa WhatsApp Comercial", async () => {
+      await login(page, "rui.ref", "ruisenha12");
+      const r = await page.request.get(`${BASE}/whatsapp`, { maxRedirects: 0 });
+      assert(r.status() === 307, "vendedor acessou /whatsapp: " + r.status());
+    });
     await browser.close();
   } finally {
     try { process.kill(-server.pid!); } catch {}
