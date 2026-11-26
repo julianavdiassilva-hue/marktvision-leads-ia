@@ -1,8 +1,10 @@
-# Publicação com 1 clique no Render (https://render.com) — "New > Blueprint" apontando para este repositório.
+# PRÉVIA PROVISÓRIA no Render (plano gratuito) — "New > Blueprint" apontando para este repositório.
 # Cria o banco PostgreSQL e o serviço web; migrações e administrador geral são aplicados ao iniciar.
+# Limitações do plano gratuito: o serviço hiberna após ~15 min sem uso (1º acesso leva ~30-60 s)
+# e o banco gratuito expira em 30 dias. A hospedagem definitiva será outra (ver README).
 databases:
   - name: marktvision-db
-    plan: basic-256mb        # troque por "free" para testes (o plano gratuito expira em 30 dias)
+    plan: free
     databaseName: marktvision
     postgresMajorVersion: "16"
 
@@ -10,7 +12,7 @@ services:
   - type: web
     name: marktvision-leads-ia
     runtime: node
-    plan: starter            # "free" também funciona para prévia (hiberna sem uso)
+    plan: free
     buildCommand: npm ci && npm run build
     startCommand: npm run start:prod
     healthCheckPath: /api/health
