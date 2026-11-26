@@ -20,7 +20,7 @@ export function validSignature(rawBody: string, header: string | null, secret: s
   return timingSafeEqual(Buffer.from(got, "hex"), Buffer.from(expected, "hex"));
 }
 
-type Conn = { id: string; company_id: string; phone_number: string | null; connection_mode: string };
+export type Conn = { id: string; company_id: string; phone_number: string | null; connection_mode: string };
 type WaMessage = { from?: string; from_user_id?: string; to?: string; to_user_id?: string; id: string; timestamp?: string; type: string; [k: string]: unknown };
 
 /** Texto legível de qualquer tipo de mensagem. */
@@ -75,7 +75,7 @@ async function insertMessage(db: Db, a: { companyId: string; conversationId: str
 
 const RANK: Record<string, number> = { queued: 0, sent: 1, delivered: 2, read: 3 };
 
-async function handleMessages(db: Db, conn: Conn, value: Record<string, unknown>) {
+export async function handleMessages(db: Db, conn: Conn, value: Record<string, unknown>) {
   const contacts = (value.contacts ?? []) as { wa_id?: string; user_id?: string; profile?: { name?: string; username?: string } }[];
   for (const m of (value.messages ?? []) as WaMessage[]) {
     const prof = contacts.find((c) => (m.from_user_id && c.user_id === m.from_user_id) || (m.from && c.wa_id === m.from));
@@ -128,7 +128,7 @@ async function handleMessages(db: Db, conn: Conn, value: Record<string, unknown>
 }
 
 /** Mensagens enviadas pelo app WhatsApp Business no celular (coexistência). */
-async function handleEchoes(db: Db, conn: Conn, value: Record<string, unknown>) {
+export async function handleEchoes(db: Db, conn: Conn, value: Record<string, unknown>) {
   for (const m of (value.message_echoes ?? []) as WaMessage[]) {
     const contact = await resolveContact(db, conn.company_id, { phone: m.to, userId: m.to_user_id });
     const convId = await ensureConversation(db, conn.company_id, contact.id, conn.id);

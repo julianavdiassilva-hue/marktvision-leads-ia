@@ -1,4 +1,5 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { evolutionConfig } from "../integrations/whatsapp/evolution";
 import { z } from "zod";
 import type { AuthContext } from "../auth/core";
 import { withScope, type Db } from "../db";
@@ -43,8 +44,10 @@ export async function listConnections(ctx: AuthContext) {
 
 /** Credenciais descriptografadas — uso exclusivo do servidor (envio e webhooks). */
 export async function credentialsOf(db: Db, connectionId: string): Promise<ProviderCredentials & { provider: string }> {
-  const w = await db.one<{ provider: string; phone_number_id: string; business_account_id: string | null; credentials_encrypted: string | null }>(
-    `select provider, phone_number_id, business_account_id, credentials_encrypted from whatsapp_connections where id = $1`, [connectionId]);
+  const w = await db.one<{ provider: string; phone_number_id: string; business_account_id: string | null; credentials_encrypted: string | null; instance_name: string | null }>(
+    `select provider, phone_number_id, business_account_id, credentials_encrypted, instance_name from whatsapp_connections where id = $1`, [connectionId]);
+  // Evolution: a sessão é identificada pela instância; a chave é única da plataforma (servidor)
+  if (w.provider === "evolution") return { provider: "evolution", phoneNumberId: w.instance_name!, businessAccountId: null, accessToken: "" };
   if (!w.credentials_encrypted) throw new ProviderError("Conexão sem token de acesso. Reconecte o número.", false);
   return { provider: w.provider, phoneNumberId: w.phone_number_id, businessAccountId: w.business_account_id, accessToken: decrypt(w.credentials_encrypted) };
 }
@@ -144,6 +147,12 @@ export async function disconnectNumber(ctx: AuthContext, id: string, remove = fa
     await loadOwn(db, companyId, id);
     const running = await db.maybeOne<{ n: number }>(`select count(*)::int as n from campaigns where whatsapp_connection_id = $1 and status in ('running','scheduled')`, [id]);
     if (running && running.n > 0) throw new AppError("CONFLICT", "Há campanhas em andamento ou programadas com este número. Pause-as antes de desconectar.");
+    const ev = await db.maybeOne<{ provider: string; instance_name: string | null }>(`select provider, instance_name from whatsapp_connections where id = $1`, [id]);
+    if (ev?.provider === "evolution" && ev.instance_name) {
+      const { evolutionApi } = await import("../integrations/whatsapp/evolution");
+      try { if (remove) await evolutionApi.remove(ev.instance_name); else await evolutionApi.logout(ev.instance_name); }
+      catch (e) { if (!(e instanceof ProviderError && e.code === 404)) throw providerError(e); }
+    }
     if (remove) await db.exec(`delete from whatsapp_connections where id = $1`, [id]);
     else await db.exec(`update whatsapp_connections set status='disconnected', credentials_encrypted=null, last_error=null where id = $1`, [id]);
     await audit(db, ctx, remove ? "whatsapp.delete" : "whatsapp.disconnect", { type: "whatsapp_connection", id });
@@ -294,5 +303,71 @@ export async function setConnectionMembers(ctx: AuthContext, connectionId: strin
     await db.exec(`insert into whatsapp_connection_members (company_id, connection_id, user_id) select $1, $2, unnest($3::uuid[]) on conflict do nothing`, [companyId, connectionId, valid]);
     await audit(db, ctx, "whatsapp.members", { type: "whatsapp_connection", id: connectionId }, { users: valid.length });
     return { count: valid.length };
+  });
+}
+
+// ---------------------------------------------------------------------
+// Conexão por QR Code — Evolution API (não oficial; um servidor para todas as empresas)
+// ---------------------------------------------------------------------
+
+export function qrConfig() {
+  return { ready: evolutionConfig().ready && !!appBaseUrl() };
+}
+const appBaseUrl = () => (process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
+export const hashSecret = (s: string) => createHash("sha256").update(s).digest("hex");
+
+/** Passo 1: cria a sessão da empresa e devolve o QR Code. */
+export async function startQrConnection(ctx: AuthContext, displayName: string, reuseId?: string) {
+  const companyId = assertCompany(ctx);
+  assertFeature(ctx, "whatsapp");
+  assertCompanyAdmin(ctx);
+  const name = parse(requiredText("o nome da conexão", 80), displayName || "WhatsApp");
+  const { evolutionApi } = await import("../integrations/whatsapp/evolution");
+  const base = appBaseUrl();
+  if (!base) throw new AppError("INTEGRATION", "APP_URL não configurada: o servidor do WhatsApp não saberia para onde enviar as mensagens.");
+  const secret = randomBytes(24).toString("hex");
+  return withScope(scopeOf(ctx), async (db) => {
+    let id = reuseId;
+    if (id) {
+      const w = await loadOwn(db, companyId, id);
+      void w;
+    } else {
+      const limits = await companyLimits(db, companyId);
+      const { n } = await db.one<{ n: number }>(`select count(*)::int as n from whatsapp_connections where company_id = $1`, [companyId]);
+      if (limits.max_whatsapp_connections != null && n >= limits.max_whatsapp_connections)
+        throw new AppError("LIMIT", `Limite de ${limits.max_whatsapp_connections} número(s) de WhatsApp do plano atingido.`);
+      id = randomUUID();
+    }
+    const instance = `mv-${id.slice(0, 8)}-${randomBytes(3).toString("hex")}`;
+    await db.exec(
+      `insert into whatsapp_connections (id, company_id, provider, connection_mode, display_name, instance_name, webhook_secret_hash, status, settings, created_by)
+       values ($1,$2,'evolution','qr',$3,$4,$5,'pending',$6,$7)
+       on conflict (id) do update set display_name = excluded.display_name, instance_name = excluded.instance_name,
+         webhook_secret_hash = excluded.webhook_secret_hash, status = 'pending', last_error = null`,
+      [id, companyId, name, instance, hashSecret(secret), { per_minute: 10 }, ctx.user.id]);
+    let qr;
+    try { qr = await evolutionApi.createInstance(instance, `${base}/api/webhooks/evolution`, secret); } catch (e) { throw providerError(e); }
+    await audit(db, ctx, "whatsapp.qr_start", { type: "whatsapp_connection", id }, { instance });
+    return { id: id!, qr };
+  });
+}
+
+/** Passo 2 (repetido a cada ~15s): situação da conexão e QR atualizado; opcionalmente código de pareamento. */
+export async function pollQrConnection(ctx: AuthContext, id: string, phoneForPairing?: string) {
+  const companyId = assertCompany(ctx);
+  assertFeature(ctx, "whatsapp");
+  const { evolutionApi } = await import("../integrations/whatsapp/evolution");
+  return withScope(scopeOf(ctx), async (db) => {
+    await loadOwn(db, companyId, id);
+    const w = await db.one<{ instance_name: string; status: string; phone_number: string | null }>(`select instance_name, status, phone_number from whatsapp_connections where id = $1`, [id]);
+    try {
+      const st = await evolutionApi.state(w.instance_name);
+      if (st === "open") {
+        await db.exec(`update whatsapp_connections set status = 'connected', connected_at = coalesce(connected_at, now()), last_sync_at = now(), last_error = null where id = $1`, [id]);
+        return { connected: true, phone: w.phone_number, qr: null };
+      }
+      const qr = await evolutionApi.connect(w.instance_name, phoneForPairing);
+      return { connected: false, phone: null, qr };
+    } catch (e) { throw providerError(e); }
   });
 }

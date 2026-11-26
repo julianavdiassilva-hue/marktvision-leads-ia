@@ -1,18 +1,26 @@
-# PRÉVIA PROVISÓRIA no Render (plano gratuito) — "New > Blueprint" apontando para este repositório.
-# Cria o banco PostgreSQL e o serviço web; migrações e administrador geral são aplicados ao iniciar.
-# Limitações do plano gratuito: o serviço hiberna após ~15 min sem uso (1º acesso leva ~30-60 s)
-# e o banco gratuito expira em 30 dias. A hospedagem definitiva será outra (ver README).
+# =====================================================================
+# Marktvision Leads IA — infraestrutura no Render ("New > Blueprint")
+# Preços conferidos em render.com/pricing em 26/11/2026 (valores mensais, USD):
+#   marktvision-db         Postgres basic-256mb  US$ 6,00 + disco 1 GB (US$ 0,30/GB)
+#   marktvision-evolution  Private service starter (512 MB) US$ 7,00 + disco 1 GB US$ 0,25
+#   marktvision-leads-ia   Web service free (hiberna após 15 min sem uso) US$ 0,00
+#   Total estimado: ~US$ 13,55/mês. Workspace Hobby: US$ 0.
+# Por que pagos: a Evolution precisa ficar ligada 24h (o plano gratuito hiberna e derruba o WhatsApp)
+# e precisa de disco persistente (só planos pagos). O banco gratuito expira em 30 dias e guarda as sessões.
+# =====================================================================
 databases:
   - name: marktvision-db
-    plan: free
+    plan: basic-256mb
+    diskSizeGB: 1
     databaseName: marktvision
     postgresMajorVersion: "16"
 
 services:
+  # ---------------- Aplicação Marktvision ----------------
   - type: web
     name: marktvision-leads-ia
     runtime: node
-    plan: free
+    plan: free            # recomendado "starter" (US$ 7) quando houver clientes: fica ligado 24h e as campanhas não pausam
     buildCommand: npm ci && npm run build
     startCommand: npm run start:prod
     healthCheckPath: /api/health
@@ -31,19 +39,47 @@ services:
         value: admin
       - key: PLATFORM_ADMIN_PASSWORD
         sync: false          # o Render pede este valor na criação
+      # Conexão por QR Code: servidor Evolution na rede privada do Render
+      - key: EVOLUTION_API_HOSTPORT
+        fromService: { type: pserv, name: marktvision-evolution, property: hostport }
+      - key: EVOLUTION_API_KEY
+        fromService: { type: pserv, name: marktvision-evolution, envVarKey: AUTHENTICATION_API_KEY }
+      # Integrações (opcionais; podem ser preenchidas depois)
       - key: GOOGLE_PLACES_API_KEY
         sync: false
-      - key: META_APP_ID
-        sync: false
-      - key: META_APP_SECRET
-        sync: false
-      - key: META_WEBHOOK_VERIFY_TOKEN
-        generateValue: true
-      - key: META_EMBEDDED_SIGNUP_CONFIG_ID
-        sync: false
-      - key: META_GRAPH_API_VERSION
-        value: v27.0
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: AI_MODEL
         value: claude-opus-5-5
+      # Integração oficial da Meta (alternativa futura)
+      - key: META_APP_ID
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
+      - key: META_EMBEDDED_SIGNUP_CONFIG_ID
+        sync: false
+      - key: META_WEBHOOK_VERIFY_TOKEN
+        generateValue: true
+      - key: META_GRAPH_API_VERSION
+        value: v27.0
+
+  # ---------------- Servidor de WhatsApp por QR Code (Evolution API v2.3.8) ----------------
+  # Um único servidor para TODAS as empresas; cada número é uma sessão independente criada pela plataforma.
+  # Serviço privado: não fica exposto na internet (só a Marktvision acessa).
+  - type: pserv
+    name: marktvision-evolution
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./infra/evolution/Dockerfile
+    dockerContext: ./infra/evolution
+    disk:
+      name: evolution-sessions
+      mountPath: /evolution/instances   # chaves de criptografia das sessões (sobrevivem a reinícios e atualizações)
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: AUTHENTICATION_API_KEY
+        generateValue: true             # chave única da plataforma, compartilhada só com a Marktvision
+      - key: DATABASE_URL               # mesmo banco, schema separado "evolution_api" (sem custo extra)
+        fromDatabase: { name: marktvision-db, property: connectionString }

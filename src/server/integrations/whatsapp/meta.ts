@@ -113,4 +113,5 @@ export const metaOnboarding: OnboardingCapable = {
   },
 };
 
-export const PROVIDERS: Record<string, WhatsAppProvider> = { meta_cloud: metaProvider };
+import { evolutionProvider } from "./evolution";
+export const PROVIDERS: Record<string, WhatsAppProvider> = { meta_cloud: metaProvider, evolution: evolutionProvider };

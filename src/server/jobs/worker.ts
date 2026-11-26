@@ -11,6 +11,7 @@ import { ensureConversation, sendAndRecord, windowOpen } from "../messaging";
 import { credentialsOf } from "../services/whatsapp";
 import { metaOnboarding } from "../integrations/whatsapp/meta";
 import { processWhatsAppWebhook } from "../webhooks/whatsapp";
+import { processEvolutionWebhook } from "../webhooks/evolution";
 import { renderTemplate } from "@/lib/template";
 
 type Job = { id: number; company_id: string | null; type: string; payload: Record<string, unknown>; attempts: number; max_attempts: number };
@@ -28,7 +29,7 @@ async function dispatchCampaign(job: Job): Promise<Result> {
       template_id: string | null; settings: { templateParams?: string[] }; company_name: string }>(
       `select c.*, co.name as company_name from campaigns c join companies co on co.id = c.company_id where c.id = $1`, [campaignId]);
     if (!c || c.status !== "running" || !c.whatsapp_connection_id) return null;
-    const conn = await db.maybeOne<{ status: string; settings: { per_minute?: number } }>(`select status, settings from whatsapp_connections where id = $1`, [c.whatsapp_connection_id]);
+    const conn = await db.maybeOne<{ status: string; settings: { per_minute?: number }; provider: string }>(`select status, settings, provider from whatsapp_connections where id = $1`, [c.whatsapp_connection_id]);
     if (conn?.status !== "connected") {
       await db.exec(`update campaigns set status = 'paused', paused_at = now() where id = $1`, [campaignId]);
       await recordEvent(db, null, c.company_id, "campaign.paused", { campaignId }, { reason: "WhatsApp desconectado" });
@@ -58,10 +59,11 @@ async function dispatchCampaign(job: Job): Promise<Result> {
       const t = await db.maybeOne<{ name: string; language: string; components: { type: string; text?: string }[] }>(`select name, language, components from whatsapp_templates where id = $1`, [c.template_id]);
       if (t) template = { name: t.name, language: t.language, body: t.components.find((x) => x.type === "BODY")?.text ?? "" };
     }
-    return { c, items, template };
+    return { c, items, template, provider: conn.provider };
   });
   if (!claim) return;
-  const { c, items, template } = claim;
+  const { c, items, template, provider } = claim;
+  const unofficial = provider === "evolution";
 
   // 2) envia cada item em sua própria transação
   for (const it of items) {
@@ -84,8 +86,8 @@ async function dispatchCampaign(job: Job): Promise<Result> {
         body = template.body.replace(/\{\{(\d+)\}\}/g, (_, n) => params[Number(n) - 1] ?? "");
         tpl = { name: template.name, language: template.language, params };
       } else {
-        // Regra da Meta: mensagem livre só dentro da janela de 24h aberta pelo contato
-        if (!(await windowOpen(db, convId))) { await finish("skipped", "Fora da janela de 24h: para iniciar conversa use um modelo aprovado pela Meta"); return false; }
+        // Regra da Meta (API oficial): mensagem livre só dentro da janela de 24h aberta pelo contato
+        if (!unofficial && !(await windowOpen(db, convId))) { await finish("skipped", "Fora da janela de 24h: para iniciar conversa use um modelo aprovado pela Meta"); return false; }
         body = renderTemplate(c.message_body ?? "", data);
       }
       const r = await sendAndRecord(db, { companyId: c.company_id, connectionId: c.whatsapp_connection_id!, contactId: it.contact_id, toE164: ct.phone,
@@ -101,6 +103,8 @@ async function dispatchCampaign(job: Job): Promise<Result> {
       return false;
     });
     if (stop) return;
+    // conexão não oficial: intervalo aleatório entre envios para reduzir o risco de bloqueio do número
+    if (unofficial && process.env.NODE_ENV !== "test" && !process.env.VITEST) await new Promise((r) => setTimeout(r, 2000 + Math.random() * 4000));
   }
 
   // 3) próximo lote em 60s ou conclusão
@@ -133,10 +137,10 @@ async function startScheduled(job: Job): Promise<Result> {
 async function sendText(job: Job): Promise<Result> {
   const { conversationId, body, senderType, senderUserId } = job.payload as { conversationId: string; body: string; senderType?: "system" | "user" | "ai"; senderUserId?: string };
   await withScope(SYSTEM, async (db) => {
-    const cv = await db.one<{ company_id: string; contact_id: string; whatsapp_connection_id: string; phone: string | null }>(
-      `select cv.company_id, cv.contact_id, cv.whatsapp_connection_id, coalesce(c.whatsapp_e164, c.phone_e164) as phone
-         from conversations cv join contacts c on c.id = cv.contact_id where cv.id = $1`, [conversationId]);
-    if (!cv.phone || !(await windowOpen(db, conversationId))) return;
+    const cv = await db.one<{ company_id: string; contact_id: string; whatsapp_connection_id: string; phone: string | null; provider: string }>(
+      `select cv.company_id, cv.contact_id, cv.whatsapp_connection_id, coalesce(c.whatsapp_e164, c.phone_e164) as phone, w.provider
+         from conversations cv join contacts c on c.id = cv.contact_id join whatsapp_connections w on w.id = cv.whatsapp_connection_id where cv.id = $1`, [conversationId]);
+    if (!cv.phone || (cv.provider !== "evolution" && !(await windowOpen(db, conversationId)))) return;
     const r = await sendAndRecord(db, { companyId: cv.company_id, connectionId: cv.whatsapp_connection_id, contactId: cv.contact_id, toE164: cv.phone,
       conversationId, body, senderType: senderType ?? "system", senderUserId: senderUserId ?? null });
     if (!r.ok && r.retryable) throw new Error(r.error);
@@ -166,13 +170,14 @@ export const HANDLERS: Record<string, (j: Job) => Promise<Result>> = {
 };
 
 async function reprocessWebhooks() {
-  const evs = await withScope(SYSTEM, (db) => db.query<{ id: number; payload: unknown }>(
+  const evs = await withScope(SYSTEM, (db) => db.query<{ id: number; payload: unknown; provider: string }>(
     `update webhook_events set attempts = attempts + 1 where id in (
        select id from webhook_events where processed_at is null and attempts < 5 and received_at < now() - interval '1 minute'
-       order by id limit 20 for update skip locked) returning id, payload`));
+       order by id limit 20 for update skip locked) returning id, payload, provider`));
   for (const ev of evs) {
     try {
-      await processWhatsAppWebhook(ev.payload as never);
+      if (ev.provider === "evolution") await processEvolutionWebhook(ev.payload as never);
+      else await processWhatsAppWebhook(ev.payload as never);
       await withScope(SYSTEM, (db) => db.exec(`update webhook_events set processed_at = now(), error = null where id = $1`, [ev.id]));
     } catch (e) {
       await withScope(SYSTEM, (db) => db.exec(`update webhook_events set error = $2 where id = $1`, [ev.id, String((e as Error)?.message ?? e).slice(0, 1000)]));

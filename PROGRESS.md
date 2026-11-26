@@ -89,6 +89,19 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Reprocessamento automático de webhooks com erro (até 5 tentativas) | ✅ | código |
 | Conexão manual (avançado) validada na Meta | ✅ | E2E |
 
+## Fase 05b — Conexão por QR Code (Evolution API) — ✅ concluída (26/11/2026)
+| Item | Status | Evidência |
+|---|---|---|
+| Botão “Conectar WhatsApp” → QR Code renovado automaticamente → conexão detectada sozinha | ✅ / ⏳ leitura real do QR | integração + Evolution real local (QR depende da rede do WhatsApp, bloqueada aqui) |
+| Código de pareamento pelo número (alternativa ao QR) | ✅ | integração |
+| Sessão independente por empresa, criada pela plataforma; um servidor para todos | ✅ | integração |
+| Webhook com segredo individual por sessão (hash), reenvio automático da Evolution | ✅ | integração |
+| Mensagens recebidas/enviadas pelo celular, status de entrega/leitura, LID, grupos ignorados | ✅ | integração |
+| Campanhas, SAIR, vendedores por número e conversas funcionando pela mesma lógica da integração oficial | ✅ | integração |
+| Desconexão no celular, reconectar com novo QR, desconectar e excluir | ✅ | integração |
+| Infraestrutura Render (serviço privado + disco + schema próprio) | ✅ arquivo pronto / ⏳ publicação | Evolution v2.3.8 executada localmente com o nosso PostgreSQL |
+| Integração oficial da Meta mantida como alternativa | ✅ | E2E |
+
 ## Infraestrutura
 | Item | Status |
 |---|---|

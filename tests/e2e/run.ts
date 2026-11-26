@@ -414,10 +414,12 @@ async function main() {
       await page.waitForTimeout(600);
       await login(page, "paula.ref", "paulasenha1");
       await page.goto(`${BASE}/whatsapp`);
+      await page.getByRole("button", { name: /^Conectar WhatsApp Escaneie o QR Code/ }).waitFor();
+      await page.getByText(/servidor de conexão \(Evolution API\) precisa ser publicado/).waitFor();
+      assert(await page.getByRole("button", { name: /^Conectar WhatsApp Escaneie o QR Code/ }).isDisabled(), "botão de QR ativo sem servidor configurado");
+      await page.getByText(/funciona com números pessoais e WhatsApp Business/).waitFor();
+      await page.getByText("Integração oficial da Meta (alternativa para o futuro)").click();
       await page.getByRole("button", { name: /Conectar WhatsApp Business do celular/ }).waitFor();
-      await page.getByText(/Provedor de Tecnologia na Meta/).waitFor();
-      assert(await page.getByRole("button", { name: /Conectar WhatsApp Business do celular/ }).isDisabled(), "botão ativo sem configuração da plataforma");
-      await page.getByText(/Números pessoais/).waitFor();
       await page.screenshot({ path: `${SHOTS}/15-whatsapp.png`, fullPage: true });
     });
     await step("conexão manual valida na Meta (sem simular): falha clara sem acesso", async () => {

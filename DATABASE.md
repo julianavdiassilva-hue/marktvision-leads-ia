@@ -56,6 +56,10 @@ Política padrão das tabelas comerciais: `company_id = app_company_id() OR app_
 - `messages.channel` (api | business_app | history) e `template_name`.
 - `webhook_events.attempts`: reprocessamento automático.
 
+## 0008 — Conexão por QR Code
+`whatsapp_connections.provider` aceita `evolution`; `connection_mode` aceita `qr`; `instance_name` (único) e `webhook_secret_hash`.
+A Evolution API usa o MESMO PostgreSQL em schema separado `evolution_api` (criado pelas migrações dela; não afetado pelo RLS nem pelo reset do schema `public`).
+
 ## Triggers
 - `set_updated_at` em tabelas editáveis.
 - `create_default_pipeline` (após inserir empresa): funil com 9 etapas (Novo lead … Venda realizada, Perdido) + `ai_settings`.

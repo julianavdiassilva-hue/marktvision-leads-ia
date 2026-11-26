@@ -51,6 +51,10 @@ A Graph API da Meta é substituída SOMENTE no teste por um simulador local que 
 ## Fase 05 — E2E (4 cenários) — ✅ (total acumulado 37/37, Fases 01–04 reexecutadas)
 Módulo com botão de conexão e orientações · conexão manual validada na Meta (falha clara, nada simulado) · webhook recusa token/assinatura inválidos · vendedor bloqueado.
 
+## Fase 05b — QR Code / Evolution — Integração (13 cenários) — ✅ (total acumulado 94/94)
+Servidor não configurado · vendedor bloqueado · sessão própria com webhook e segredo (guardado só como hash) · QR renovado e código de pareamento · outra empresa bloqueada · autenticação do webhook · conexão aberta registra número · identificação por telefone/LID e grupos ignorados · mensagem recebida idempotente e distribuída ao vendedor · eco do celular · campanha por QR com status e resposta, sem duplicar · SAIR com confirmação · desconexão pelo celular e exclusão.
+**Teste real local:** imagem oficial `evoapicloud/evolution-api:v2.3.8` + `infra/evolution` executada com o PostgreSQL do projeto: migrações no schema `evolution_api` (37 tabelas, schema `public` intacto), autenticação, criação/consulta/remoção de sessão a partir do código da Marktvision ✅. Geração do QR não validada aqui (rede do WhatsApp bloqueada neste ambiente) — validar no Render.
+
 ## Pendente de validação real (credenciais externas)
 Embedded Signup e envio/recebimento reais dependem do app da Marktvision aprovado como Tech Provider na Meta e do domínio público (Render).
 

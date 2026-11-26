@@ -7,12 +7,13 @@ import { Badge } from "@/components/ui";
 import { disconnectAction, manualConnectAction, setMembersAction, setRateAction, syncTemplatesAction, testConnectionAction } from "@/app/actions/whatsapp";
 import { fmtDateTime, fmtInt } from "@/lib/format";
 import type { ConnectionRow } from "@/server/services/whatsapp";
+import { QrConnect } from "./qr-connect";
 import type { ActionResult } from "@/server/action";
 
 const STATUS: Record<string, [string, "green" | "red" | "amber" | "gray"]> = {
   connected: ["Conectado", "green"], disconnected: ["Desconectado", "gray"], error: ["Com erro", "red"], pending: ["Pendente", "amber"],
 };
-const MODE: Record<string, string> = { coexistence: "WhatsApp Business + API (coexistência)", cloud_api: "Somente API", manual: "Conexão manual" };
+const MODE: Record<string, string> = { coexistence: "Oficial Meta — coexistência", cloud_api: "Oficial Meta — somente API", manual: "Oficial Meta — manual", qr: "QR Code (WhatsApp Web)" };
 
 export function ConnectionsList({ rows, team, members, canManage }: {
   rows: ConnectionRow[]; team: { id: string; name: string }[]; members: { connection_id: string; user_id: string }[]; canManage: boolean;
@@ -41,7 +42,7 @@ function ConnectionCard({ c, team, memberIds, canManage }: { c: ConnectionRow; t
           <p className="mt-1 text-[16px] font-semibold tabular-nums">{c.phone_number ?? "Número não informado"}</p>
           <p className="mt-1 text-[14px] text-muted">
             Conectado em {fmtDateTime(c.connected_at)} · última sincronização {fmtDateTime(c.last_sync_at)}
-            {c.quality_rating && ` · qualidade ${c.quality_rating}`} · {fmtInt(c.templates)} modelo(s) · {fmtInt(c.messages_month)} mensagem(ns) enviadas no mês
+            {c.quality_rating && ` · qualidade ${c.quality_rating}`}{c.provider !== "evolution" && ` · ${fmtInt(c.templates)} modelo(s)`} · {fmtInt(c.messages_month)} mensagem(ns) enviadas no mês
           </p>
           {c.connection_mode === "coexistence" && (
             <p className="mt-1 text-[14px] text-muted">Sincronização do app: contatos {ob.contacts_sync_requested_at ? "solicitados" : "aguardando"} · histórico {ob.history_shared === false ? "não compartilhado pelo cliente" : ob.history_progress != null ? `${ob.history_progress}%` : "aguardando"}</p>
@@ -51,12 +52,15 @@ function ConnectionCard({ c, team, memberIds, canManage }: { c: ConnectionRow; t
         <div className="flex flex-wrap gap-2">
           {pending && <Loader2 className="h-5 w-5 animate-spin self-center text-brand" />}
           {c.status !== "disconnected" && <button className="btn btn-secondary btn-sm" disabled={pending} onClick={() => run(() => testConnectionAction(c.id))}>Testar conexão</button>}
-          {c.status !== "disconnected" && <button className="btn btn-secondary btn-sm" disabled={pending} onClick={() => run(() => syncTemplatesAction(c.id))}>Sincronizar modelos</button>}
+          {c.provider !== "evolution" && c.status !== "disconnected" && <button className="btn btn-secondary btn-sm" disabled={pending} onClick={() => run(() => syncTemplatesAction(c.id))}>Sincronizar modelos</button>}
           {canManage && c.status !== "disconnected" && <button className="btn btn-danger btn-sm" disabled={pending} onClick={() => run(() => disconnectAction(c.id), "Desconectar este número? Campanhas não poderão usá-lo até reconectar.")}>Desconectar</button>}
           {canManage && c.status === "disconnected" && <button className="btn btn-danger btn-sm" disabled={pending} onClick={() => run(() => disconnectAction(c.id, true), "Excluir esta conexão? O histórico de conversas e mensagens é mantido.")}>Excluir</button>}
         </div>
       </div>
-      {c.status === "disconnected" && <p className="mt-3 text-[14px] text-muted">Para reconectar, use “Conectar WhatsApp” acima com o mesmo número: a conexão é retomada com o histórico preservado.</p>}
+      {c.provider === "evolution" && c.status !== "connected" && canManage && (
+        <div className="mt-3 flex items-center gap-3"><QrConnect ready reuse={{ id: c.id, name: c.display_name }} label="Gerar novo QR Code" /><span className="text-[14px] text-muted">O histórico de conversas é mantido.</span></div>
+      )}
+      {c.provider !== "evolution" && c.status === "disconnected" && <p className="mt-3 text-[14px] text-muted">Para reconectar, use a integração oficial com o mesmo número: a conexão é retomada com o histórico preservado.</p>}
       {msg && <p role={msg.ok ? "status" : "alert"} className={clsx("mt-3 text-[14.5px] font-medium", msg.ok ? "text-brand-dark" : "text-danger")}>{msg.text}</p>}
       {canManage && (
         <div className="mt-4 grid gap-4 border-t border-line pt-4 lg:grid-cols-[1fr_260px]">

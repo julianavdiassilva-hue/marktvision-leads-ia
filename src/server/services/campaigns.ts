@@ -281,8 +281,8 @@ export async function contactsLite(ctx: AuthContext, sel: { ids?: string[]; list
 
 export async function whatsappOptions(ctx: AuthContext) {
   const companyId = assertCompany(ctx);
-  return withScope(scopeOf(ctx), (db) => db.query<{ id: string; display_name: string; phone_number: string | null; status: string }>(
-    `select id, display_name, phone_number, status from whatsapp_connections where company_id = $1 order by display_name`, [companyId]));
+  return withScope(scopeOf(ctx), (db) => db.query<{ id: string; display_name: string; phone_number: string | null; status: string; provider: string }>(
+    `select id, display_name, phone_number, status, provider from whatsapp_connections where company_id = $1 order by display_name`, [companyId]));
 }
 
 export async function saveSelectionAsList(ctx: AuthContext, name: string, ids: string[]) {

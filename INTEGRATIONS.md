@@ -10,7 +10,31 @@ Todas as chaves ficam no `.env` do servidor (nunca no frontend). Tokens por empr
 4. `.env`: `GOOGLE_PLACES_API_KEY=...`
 Uso: Text Search (`places:searchText`) com campos nome, telefone, endereço, site, categoria e avaliação. Consumo contado em `usage_counters` (limite `max_google_searches_month`).
 
-## 2. WhatsApp — Meta WhatsApp Business Platform (oficial) — Fase 05
+## 2A. WhatsApp por QR Code — Evolution API (modalidade ATIVA, não oficial)
+Decisão do proprietário da plataforma (26/11/2026): conexão por QR Code via Evolution API, aceitando os riscos da modalidade não oficial.
+
+**Como funciona:** UM servidor Evolution (serviço privado no Render) atende todas as empresas. Ao clicar em “Conectar WhatsApp”, a Marktvision cria uma sessão (instância) exclusiva da empresa, com webhook e segredo próprios, e exibe o QR Code (ou código de pareamento por número). Nenhuma configuração manual por cliente.
+
+**Funciona com:** WhatsApp pessoal e WhatsApp Business (como “aparelho conectado”, igual ao WhatsApp Web). O celular continua funcionando normalmente; mensagens enviadas pelo celular também aparecem no sistema.
+
+**Riscos/limitações (não oficial):** o WhatsApp pode bloquear números que enviam mensagens em massa ou recebem denúncias; não há SLA; mudanças do WhatsApp podem exigir atualizar a versão da Evolution. Mitigações implementadas: intervalo aleatório de 2–6 s entre envios, ritmo padrão de 10/min por número (ajustável), respeito a descadastramento (SAIR) e alerta para enviar só a contatos que autorizaram. Grupos são ignorados.
+
+**Sessões persistentes:** credenciais no PostgreSQL (schema `evolution_api`) + chaves de criptografia no disco persistente `/evolution/instances` (conferido no código-fonte da v2.3.8 — sem esse disco a sessão cairia a cada reinício).
+
+**Infraestrutura (render.yaml — tudo automático):**
+| Serviço | Plano | Custo/mês (render.com/pricing, 26/11/2026) |
+|---|---|---|
+| `marktvision-evolution` (privado, Docker, v2.3.8) | Starter 512 MB + disco 1 GB | US$ 7,00 + US$ 0,25 |
+| `marktvision-db` (PostgreSQL 16, Marktvision + Evolution) | Basic-256mb + 1 GB | US$ 6,00 + US$ 0,30 |
+| `marktvision-leads-ia` (aplicação) | Free (hiberna sem uso) | US$ 0 — recomendado Starter US$ 7 com clientes ativos |
+| **Total inicial** | | **≈ US$ 13,55/mês** (≈ US$ 20,55 com a aplicação Starter) |
+Escala: com muitos números conectados, aumentar a Evolution para Standard (2 GB, US$ 25/mês).
+
+**Variáveis (o Blueprint preenche sozinho):** `EVOLUTION_API_HOSTPORT` e `EVOLUTION_API_KEY` (chave gerada automaticamente e compartilhada só pela rede privada). Para usar uma Evolution externa: `EVOLUTION_API_URL` + `EVOLUTION_API_KEY`. A URL pública da aplicação (`RENDER_EXTERNAL_URL`/`APP_URL`) é usada nos webhooks.
+
+**Alternativa de hospedagem (se não usar o Render):** qualquer VPS com Docker (ex.: 2 GB RAM) rodando `infra/evolution/Dockerfile` + PostgreSQL; o Render atende todos os requisitos, por isso é o recomendado.
+
+## 2B. WhatsApp — Meta WhatsApp Business Platform (oficial) — alternativa futura
 Arquitetura: **cada empresa cliente conecta o próprio número**, sozinha, pelo botão “Conectar WhatsApp” (Embedded Signup oficial).
 A Marktvision tem UM app na Meta (credenciais da plataforma); cada empresa recebe o **seu próprio token**, gerado na conexão e guardado criptografado. Não há número fixo nem token compartilhado entre clientes.
 

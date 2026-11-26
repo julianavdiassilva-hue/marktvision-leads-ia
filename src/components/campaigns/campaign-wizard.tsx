@@ -17,7 +17,7 @@ import { fmtInt } from "@/lib/format";
 import type { ContactLite } from "@/server/services/campaigns";
 
 type Opt = { id: string; name: string };
-type Conn = { id: string; display_name: string; phone_number: string | null; status: string };
+type Conn = { id: string; display_name: string; phone_number: string | null; status: string; provider?: string };
 type Script = { id: string; name: string; body: string };
 export type WizardInitial = {
   id?: string; status?: string; name: string; listId: string | null; scriptId: string | null; messageBody: string;
@@ -180,7 +180,10 @@ export function CampaignWizard({ initial, lists, team, scripts: initialScripts, 
                 ))}
               </div>
             )}
-            {connId && (
+            {connId && connections.find((c) => c.id === connId)?.provider === "evolution" && (
+              <p className="mt-4 text-[14px] text-muted">Conexão por QR Code: a mensagem do Script é enviada diretamente, com intervalo automático entre os envios para proteger o número. Envie apenas para contatos que autorizaram.</p>
+            )}
+            {connId && connections.find((c) => c.id === connId)?.provider !== "evolution" && (
               <div className="mt-6 rounded-xl border border-line bg-surface p-4">
                 <p className="text-[16px] font-bold">Modelo aprovado pela Meta</p>
                 <p className="mb-3 mt-1 text-[14px] text-muted">Para iniciar conversa com quem não falou com você nas últimas 24h, a Meta exige um modelo aprovado. Sem modelo, a mensagem do Script só é enviada a quem tem conversa aberta (janela de 24h); os demais ficam como “Ignorado”.</p>

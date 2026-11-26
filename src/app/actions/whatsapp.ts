@@ -32,3 +32,12 @@ export async function setMembersAction(id: string, userIds: string[]) {
 export async function setRateAction(id: string, perMinute: number) {
   return runAction(async (ctx) => { await updateConnectionSettings(ctx, id, perMinute); return { message: "Ritmo de envio atualizado." }; });
 }
+
+export async function startQrAction(displayName: string, reuseId?: string) {
+  const { startQrConnection } = await import("@/server/services/whatsapp");
+  return runAction(async (ctx) => ({ data: await startQrConnection(ctx, displayName, reuseId) }));
+}
+export async function pollQrAction(id: string, phone?: string) {
+  const { pollQrConnection } = await import("@/server/services/whatsapp");
+  return runAction(async (ctx) => ({ data: await pollQrConnection(ctx, id, phone) }));
+}
