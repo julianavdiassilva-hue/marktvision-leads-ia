@@ -3,7 +3,7 @@ import "dotenv/config";
 import { Client } from "pg";
 import { migrate } from "./migrate";
 
-export async function resetDatabase(url = process.env.DATABASE_OWNER_URL, log = true) {
+export async function resetDatabase(url = process.env.DATABASE_OWNER_URL || process.env.DATABASE_URL, log = true) {
   if (process.env.NODE_ENV === "production") throw new Error("Reset bloqueado em produção.");
   const c = new Client({ connectionString: url });
   await c.connect();

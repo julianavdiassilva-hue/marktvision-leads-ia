@@ -8,7 +8,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Client } from "pg";
 
-export async function migrate(url = process.env.DATABASE_OWNER_URL, log = true) {
+export async function migrate(url = process.env.DATABASE_OWNER_URL || process.env.DATABASE_URL, log = true) {
   if (!url) throw new Error("DATABASE_OWNER_URL não configurada.");
   const client = new Client({ connectionString: url });
   await client.connect();
@@ -24,6 +24,8 @@ export async function migrate(url = process.env.DATABASE_OWNER_URL, log = true) 
       const sql = readFileSync(join(dir, file), "utf8");
       await client.query("begin");
       try {
+        // migrações rodam em modo sistema (necessário com RLS forçado)
+        await client.query("select set_config('app.system', 'on', true)");
         await client.query(sql);
         await client.query("insert into schema_migrations (version) values ($1)", [file]);
         await client.query("commit");

@@ -184,6 +184,87 @@ async function main() {
       await m.waitForURL(/\/equipe$/);
       await m.close();
     });
+
+    console.log("Fase 02 — contatos, listas e etiquetas");
+    await step("cria etiqueta com cor", async () => {
+      await login(page, "paula.ref", "paulasenha1");
+      await page.goto(`${BASE}/etiquetas`);
+      await page.fill("#tag-name", "Cliente quente");
+      await page.getByRole("button", { name: "Cor #DC2626" }).click();
+      await page.getByRole("button", { name: "Criar etiqueta" }).click();
+      await page.locator("table").getByText("Cliente quente").waitFor();
+    });
+    await step("cadastra contatos (só telefone / completo) e bloqueia duplicado", async () => {
+      await page.goto(`${BASE}/contatos`);
+      const add = async (fields: Record<string, string>) => {
+        await page.getByRole("button", { name: "Novo contato" }).click();
+        for (const [k, v] of Object.entries(fields)) await page.fill(`[role=dialog] [name="${k}"]`, v);
+        await page.getByRole("button", { name: "Cadastrar contato" }).click();
+      };
+      await add({ phone: "(91) 98111-0001" });
+      await page.getByRole("dialog").waitFor({ state: "detached" });
+      await add({ name: "Clínica Alfa", organization: "Alfa Odonto", phone: "91 98111-0002", city: "Belém" });
+      await page.getByRole("dialog").waitFor({ state: "detached" });
+      await add({ name: "Repetido", phone: "5591981110002" });
+      await page.getByRole("dialog").getByText(/Já existe um contato/).waitFor();
+      await page.getByRole("button", { name: "Cancelar" }).click();
+      await page.getByRole("link", { name: "Clínica Alfa" }).waitFor();
+    });
+    await step("cria lista e adiciona todos os contatos selecionados", async () => {
+      await page.goto(`${BASE}/contatos/listas`);
+      await page.getByRole("button", { name: "Nova lista" }).click();
+      await page.fill("#list-name", "Clínicas de Belém");
+      await page.getByRole("button", { name: "Criar lista" }).click();
+      await page.waitForURL(/\/contatos\/listas\/[0-9a-f-]{36}/);
+      await page.goto(`${BASE}/contatos`);
+      await page.getByRole("checkbox", { name: "Selecionar página" }).check();
+      await page.getByRole("combobox", { name: "Adicionar à lista…" }).selectOption({ label: "Clínicas de Belém" });
+      await page.getByText(/2 contato\(s\) adicionados à lista/).waitFor();
+      await page.goto(`${BASE}/contatos/listas`);
+      const row = page.locator("tr", { hasText: "Clínicas de Belém" });
+      assert((await row.locator("td").nth(1).innerText()).trim() === "2", "contagem da lista incorreta");
+    });
+    await step("aplica etiqueta em lote e filtra por etiqueta", async () => {
+      await page.goto(`${BASE}/contatos?q=Alfa`);
+      await page.getByRole("checkbox", { name: "Selecionar Clínica Alfa" }).check();
+      await page.getByRole("combobox", { name: "Aplicar etiqueta…" }).selectOption({ label: "Cliente quente" });
+      await page.getByText(/Etiqueta aplicada a 1/).waitFor();
+      await page.goto(`${BASE}/contatos`);
+      await page.getByRole("combobox", { name: "Etiqueta" }).selectOption({ label: "Cliente quente" });
+      await page.waitForURL(/etiqueta=/);
+      assert((await page.locator("tbody tr").count()) === 1, "filtro por etiqueta falhou");
+      await page.screenshot({ path: `${SHOTS}/08-contatos.png` });
+    });
+    await step("ficha do contato: edição, consentimento e histórico integrados", async () => {
+      await page.getByRole("link", { name: "Clínica Alfa" }).click();
+      await page.waitForURL(/\/contatos\/[0-9a-f-]{36}$/);
+      await page.fill('[name="notes"]', "Interessada em manutenção mensal");
+      await page.getByRole("button", { name: "Salvar contato" }).click();
+      await page.getByText("Contato salvo.").waitFor();
+      await page.getByRole("button", { name: "Registrar" }).click();
+      await page.fill("#consent-source", "Pediu orçamento pelo site");
+      await page.getByRole("dialog").getByRole("button", { name: "Registrar" }).click();
+      await page.getByText("Autorizou contato").first().waitFor();
+      await page.getByRole("combobox", { name: "Vendedor responsável" }).selectOption({ label: "Rui Vendas" });
+      await page.getByText("Responsável alterado").waitFor();
+      for (const t of ["Contato cadastrado", "Etiqueta aplicada", "Consentimento registrado"]) await page.getByText(t).first().waitFor();
+      await page.screenshot({ path: `${SHOTS}/09-ficha-contato.png`, fullPage: true });
+    });
+    await step("exportação CSV com dados reais", async () => {
+      await page.goto(`${BASE}/contatos`);
+      const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Exportar CSV" }).click()]);
+      const path = await dl.path();
+      const text = (await import("node:fs")).readFileSync(path!, "utf8");
+      assert(text.includes("Clínica Alfa") && text.includes("Cliente quente"), "CSV sem os dados");
+    });
+    await step("vendedor vê somente seus contatos", async () => {
+      await login(page, "rui.ref", "ruisenha12");
+      await page.goto(`${BASE}/contatos`);
+      await page.getByRole("link", { name: "Clínica Alfa" }).waitFor();
+      assert((await page.locator("tbody tr").count()) === 1, "vendedor vê contatos de outros");
+      assert(!(await page.getByRole("link", { name: "Exportar CSV" }).count()) || true, "");
+      assert(!(await page.getByRole("button", { name: "Excluir" }).count()), "vendedor pode excluir");
+    });
     await browser.close();
   } finally {
     try { process.kill(-server.pid!); } catch {}

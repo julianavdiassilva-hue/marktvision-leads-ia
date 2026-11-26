@@ -161,7 +161,8 @@ describe("Isolamento entre empresas", () => {
     const ana = await loginAs("ana.norte", "senhaana1");
     const e = await withScope(scopeOf(ana), (db) =>
       db.exec(`insert into contacts (company_id, name) values ($1, 'invasor')`, [companyA])).then(() => null, (x) => x);
-    expect(String(e?.message)).toMatch(/row-level security/);
+    expect(e).toBeInstanceOf(AppError);
+    expect((e as AppError).code).toBe("FORBIDDEN");
     const upd = await withScope(scopeOf(ana), (db) => db.exec(`update companies set name = 'hack' where id = $1`, [companyA]));
     expect(upd).toBe(0);
   });

@@ -1,4 +1,5 @@
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
+import { toAppError } from "./errors";
 
 /**
  * Acesso ao banco. A aplicação conecta com um papel NÃO superusuário
@@ -65,7 +66,7 @@ export async function withScope<T>(scope: Scope, fn: (db: Db) => Promise<T>): Pr
     return result;
   } catch (e) {
     await client.query("rollback").catch(() => {});
-    throw e;
+    throw toAppError(e); // erros do banco viram mensagens em português
   } finally {
     client.release();
   }

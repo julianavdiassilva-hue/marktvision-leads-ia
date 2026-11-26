@@ -1,13 +1,18 @@
 import { requireModulePage } from "@/server/auth/next";
-import { ModulePending } from "@/components/module-pending";
+import { isCompanyAdmin } from "@/server/guards";
+import { listTags, TAG_COLORS } from "@/server/services/tags";
+import { PageHeader } from "@/components/ui";
+import { TagsManager } from "@/components/contacts/tags";
 
 export const metadata = { title: "Etiquetas" };
 
-export default async function Page() {
-  await requireModulePage(["tags"]);
+export default async function TagsPage() {
+  const ctx = await requireModulePage(["tags"]);
+  const tags = await listTags(ctx);
   return (
-    <ModulePending title="Etiquetas" phase={2}
-      description="Etiquetas personalizadas com nome e cor, vinculadas ao contato central."
-      connections={['Etiqueta aplicada na conversa aparece no CRM e nos contatos', 'Regras de aplicação automática']} />
+    <>
+      <PageHeader title="Etiquetas" description="Etiquetas ficam no contato central: aplicadas em contatos, conversas ou CRM, aparecem em todos os módulos." />
+      <TagsManager tags={tags} colors={TAG_COLORS} canEdit={isCompanyAdmin(ctx)} />
+    </>
   );
 }

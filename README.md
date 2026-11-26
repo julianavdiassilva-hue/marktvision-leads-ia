@@ -39,3 +39,11 @@ npm run build && npm run test:e2e # navegador real (requer Playwright/Chromium)
 2. **Empresas → Nova empresa**: informe só o nome (opcionalmente, já crie administrador e vendedores).
 3. Na página da empresa, ajuste funcionalidades e limites.
 4. Use o seletor **Ambiente** (topo) para operar dentro de uma empresa, ou entre com o login do administrador da empresa.
+
+## Publicação (prévia online)
+O arquivo `render.yaml` publica banco + aplicação no Render em um clique:
+1. Crie uma conta em https://render.com e conecte sua conta do GitHub.
+2. **New → Blueprint** → selecione este repositório.
+3. Informe `PLATFORM_ADMIN_PASSWORD` (senha do administrador geral) quando solicitado.
+4. Ao final, acesse a URL `https://marktvision-leads-ia.onrender.com` (ou a exibida pelo Render) e entre com `admin`.
+As migrações e o administrador geral são aplicados automaticamente a cada início (`npm run start:prod`).

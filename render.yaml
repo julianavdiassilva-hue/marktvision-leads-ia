@@ -1,0 +1,43 @@
+# Publicação com 1 clique no Render (https://render.com) — "New > Blueprint" apontando para este repositório.
+# Cria o banco PostgreSQL e o serviço web; migrações e administrador geral são aplicados ao iniciar.
+databases:
+  - name: marktvision-db
+    plan: basic-256mb        # troque por "free" para testes (o plano gratuito expira em 30 dias)
+    databaseName: marktvision
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: marktvision-leads-ia
+    runtime: node
+    plan: starter            # "free" também funciona para prévia (hiberna sem uso)
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        fromDatabase: { name: marktvision-db, property: connectionString }
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: PLATFORM_ADMIN_NAME
+        value: Administrador Marktvision
+      - key: PLATFORM_ADMIN_USERNAME
+        value: admin
+      - key: PLATFORM_ADMIN_PASSWORD
+        sync: false          # o Render pede este valor na criação
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false
+      - key: META_APP_ID
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
+      - key: META_WEBHOOK_VERIFY_TOKEN
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: AI_MODEL
+        value: claude-sonnet-5-5

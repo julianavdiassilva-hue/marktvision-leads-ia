@@ -27,10 +27,17 @@ Os testes nunca usam o banco de desenvolvimento (`TEST_DATABASE_*`).
 Login inválido · redirecionamento sem sessão · admin geral · empresa só com nome · empresa + 3 acessos · bloqueio de Campanhas/WhatsApp persistido · menu do admin da empresa · **acesso por URL bloqueado com HTTP 307** (/campanhas, /whatsapp, /admin/*) · cadastro de vendedor pela equipe · retirada individual do CRM · menu e URLs do vendedor · isolamento por URL entre empresas (404) · seletor de ambiente · desativação de empresa bloqueia login · celular 390 px sem rolagem horizontal.
 Capturas: `docs/screenshots/`.
 
+## Fase 02 — Integração (13 cenários) — ✅ (total acumulado 39/39)
+Contato só com telefone (E.164) · validações em português · duplicado em formatos diferentes bloqueado · upsert sem duplicar e completando campos · vendedor só vê/edita os seus · transferência só por admin + histórico · listas sem duplicar membros, excluir lista mantém contatos · etiquetas e filtro · consentimento opt-in/opt-out · CSV com BOM e proteção contra fórmulas, bloqueado sem "Exportação de dados" · limite de contatos · isolamento entre empresas · exclusão só por admin.
+
+## Fase 02 — E2E (7 cenários) — ✅ (total acumulado 22/22, Fase 01 reexecutada)
+Etiqueta com cor · cadastro e bloqueio de duplicado · lista + seleção em lote · etiqueta em lote + filtro · ficha com edição, consentimento, responsável e histórico · download CSV · vendedor vê só os seus.
+
 ## Erros encontrados e corrigidos
 1. Tentativas de login falhas eram gravadas dentro da transação revertida → bloqueio de força bruta nunca ativava. Corrigido: a transação sempre confirma e o erro é lançado depois.
 2. Redirecionamentos de permissão ocorriam após início do streaming (redirecionamento no cliente). Corrigido com guarda central no layout → HTTP 307 real.
 3. Com RLS, `INSERT ... RETURNING` em `users` falhava para admin da empresa (linha ainda sem vínculo). Corrigido gerando o UUID na aplicação.
+5. Erros do PostgreSQL (ex.: nome de lista duplicado) chegavam crus aos serviços. Corrigido: `withScope` converte todo erro de banco em mensagem em português.
 4. Troca de ambiente do admin geral mantinha menu antigo → navegação completa após a troca.
 
 ## Pendentes de validação real (dependem de credenciais)

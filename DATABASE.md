@@ -46,6 +46,9 @@ Política padrão das tabelas comerciais: `company_id = app_company_id() OR app_
 | webhook_events | payload bruto recebido (auditoria/reprocessamento) | só sistema |
 | usage_counters | consumo mensal (mensagens, pesquisas) para limites | PK (empresa, métrica, mês) |
 
+## 0004 — RLS forçado
+`FORCE ROW LEVEL SECURITY` em todas as tabelas com RLS: o isolamento vale mesmo quando a aplicação usa o usuário dono das tabelas (hospedagens com um único usuário). Migrações e seed rodam com `app.system = on`.
+
 ## Triggers
 - `set_updated_at` em tabelas editáveis.
 - `create_default_pipeline` (após inserir empresa): funil com 9 etapas (Novo lead … Venda realizada, Perdido) + `ai_settings`.

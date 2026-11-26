@@ -14,10 +14,10 @@ export type NavItem = {
 export const MAIN_NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard", anyOf: ["dashboard"] },
   { href: "/campanhas", label: "Campanhas", icon: "Megaphone", anyOf: ["campaigns"], phase: 4 },
-  { href: "/contatos", label: "Contatos e listas", icon: "Users", anyOf: ["contacts", "contact_lists"], phase: 2 },
+  { href: "/contatos", label: "Contatos e listas", icon: "Users", anyOf: ["contacts", "contact_lists"] },
   { href: "/conversas", label: "Conversas", icon: "MessagesSquare", anyOf: ["conversations"], phase: 6 },
   { href: "/crm", label: "CRM Comercial", icon: "KanbanSquare", anyOf: ["crm"], phase: 7 },
-  { href: "/etiquetas", label: "Etiquetas", icon: "Tags", anyOf: ["tags"], phase: 2 },
+  { href: "/etiquetas", label: "Etiquetas", icon: "Tags", anyOf: ["tags"] },
   { href: "/chatbot", label: "Chatbot IA", icon: "Bot", anyOf: ["ai_chatbot"], phase: 8 },
   { href: "/contexto", label: "Contexto da empresa", icon: "BookOpen", anyOf: ["ai_chatbot"], phase: 8 },
   { href: "/whatsapp", label: "WhatsApp Comercial", icon: "MessageCircle", anyOf: ["whatsapp"], phase: 5 },

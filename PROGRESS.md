@@ -24,10 +24,32 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Dashboard inicial com indicadores reais (zerados até haver dados) | ✅ | integração |
 | Responsividade (390 px sem rolagem horizontal) | ✅ | E2E |
 
+## Fase 02 — ✅ concluída (26/11/2026)
+| Item | Status | Evidência |
+|---|---|---|
+| Base central de contatos (só um identificador obrigatório) | ✅ | integração + E2E |
+| Normalização de telefone E.164 (padrão Brasil) e bloqueio de duplicados | ✅ | integração + E2E |
+| `upsertContacts`: grava sem duplicar e completa campos vazios (reutilizado por Google, planilhas e campanhas) | ✅ | integração |
+| Busca, filtros (lista, etiqueta, responsável, origem, situação, consentimento) e paginação | ✅ | E2E |
+| Seleção individual, por página e "todos os resultados do filtro" | ✅ | E2E |
+| Ações em lote: lista, etiqueta, situação, transferência de responsável, consentimento, exclusão | ✅ | integração + E2E |
+| Ficha do contato com campanhas, conversas, negociações e histórico unificado | ✅ | E2E |
+| Consentimento LGPD (opt-in exige origem; opt-out com data) | ✅ | integração + E2E |
+| Listas: criar, renomear, excluir (sem apagar contatos), membros | ✅ | integração + E2E |
+| Etiquetas com cor, vinculadas ao contato central | ✅ | integração + E2E |
+| Exportação CSV (Excel pt-BR, proteção contra fórmulas), exige "Exportação de dados" | ✅ | integração + E2E |
+| Vendedor vê/edita somente seus contatos; exclusão e transferência só para administrador | ✅ | integração + E2E |
+| Limite de contatos do plano | ✅ | integração |
+
+## Infraestrutura
+| Item | Status |
+|---|---|
+| RLS forçado também para o dono das tabelas (0004) — hospedagem com um único usuário de banco | ✅ |
+| `render.yaml` (publicação com 1 clique) e `npm run start:prod` (migra + cria admin + inicia) | ✅ preparado, aguardando conta |
+
 ## Próximas fases
 | Módulo | Status |
 |---|---|
-| Contatos, listas, etiquetas | 🔶 tabelas + permissões prontas — Fase 02 |
 | Google Places / Importação | ⏳ Fase 03 |
 | Campanhas e scripts | 🔶 tabelas prontas — Fase 04 |
 | WhatsApp Cloud API | 🔶 tabelas prontas — Fase 05 |
