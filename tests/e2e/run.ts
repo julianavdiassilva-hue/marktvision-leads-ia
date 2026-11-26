@@ -265,6 +265,66 @@ async function main() {
       assert(!(await page.getByRole("link", { name: "Exportar CSV" }).count()) || true, "");
       assert(!(await page.getByRole("button", { name: "Excluir" }).count()), "vendedor pode excluir");
     });
+
+    console.log("Fase 03 — importação de planilhas e pesquisa no Google");
+    await step("importa XLSX: colunas detectadas, prévia, nova lista", async () => {
+      const XLSX = await import("xlsx");
+      const ws = XLSX.utils.aoa_to_sheet([
+        ["Nome do contato", "Celular", "Razão Social", "Município", "E-mail"],
+        ["Dra. Helena", "(91) 98222-0001", "Odonto Helena", "Belém", "helena@odonto.com"],
+        ["Clínica Alfa (já existe)", "91 98111-0002", "", "Belém", ""],
+        ["Repetida", "5591982220001", "", "", ""],
+        ["Número ruim", "999", "", "", ""],
+      ]);
+      const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Plan1");
+      XLSX.writeFile(wb, `${SHOTS}/../teste-import.xlsx`);
+      await login(page, "paula.ref", "paulasenha1");
+      await page.goto(`${BASE}/contatos/importar`);
+      await page.getByTestId("file-input").setInputFiles(`${SHOTS}/../teste-import.xlsx`);
+      await page.getByText("teste-import.xlsx").waitFor();
+      assert((await page.locator("#map-phone").inputValue()) === "1", "coluna de telefone não detectada");
+      assert((await page.locator("#map-organization").inputValue()) === "2", "coluna de empresa não detectada");
+      await page.screenshot({ path: `${SHOTS}/10-importar-colunas.png` });
+      await page.getByRole("button", { name: "Gerar prévia" }).click();
+      for (const t of ["Novos: 1", "Já na base: 1", "Repetidos na planilha: 1", "Inválidos: 1"]) await page.getByRole("button", { name: t }).waitFor();
+      await page.getByLabel("Nome da nova lista").fill("Clínicas importadas");
+      await page.screenshot({ path: `${SHOTS}/11-importar-previa.png`, fullPage: true });
+      await page.getByRole("button", { name: /Importar 3 linha/ }).click();
+      await page.getByText("Importação concluída").waitFor();
+      await page.getByText(/1 contato\(s\) novos · 2 já existentes/).waitFor();
+      await page.getByRole("link", { name: "Abrir a lista" }).click();
+      await page.getByRole("link", { name: "Dra. Helena" }).waitFor();
+    });
+    await step("importa CSV exportado pelo Excel (ponto e vírgula, acentos Windows-1252)", async () => {
+      const { writeFileSync } = await import("node:fs");
+      const csv = "Nome;Telefone;Cidade\r\nJoão Açaí;(91) 98333-0001;Ananindeua\r\n";
+      writeFileSync(`${SHOTS}/../teste-import.csv`, Buffer.from(csv, "latin1"));
+      await page.goto(`${BASE}/contatos/importar`);
+      await page.getByTestId("file-input").setInputFiles(`${SHOTS}/../teste-import.csv`);
+      await page.getByRole("button", { name: "Gerar prévia" }).click();
+      await page.getByRole("button", { name: "Novos: 1" }).waitFor();
+      await page.getByText("Somente na base de contatos").click();
+      await page.getByRole("button", { name: /Importar 1 linha/ }).click();
+      await page.getByText("Importação concluída").waitFor();
+      await page.goto(`${BASE}/contatos?q=Açaí`);
+      await page.getByRole("link", { name: "João Açaí" }).waitFor();
+    });
+    await step("pesquisa no Google sem chave: orientação clara, nenhum resultado inventado", async () => {
+      await page.goto(`${BASE}/contatos/google`);
+      await page.getByText(/ainda não foi ativada/).waitFor();
+      await page.fill("#g-keyword", "clínicas odontológicas"); await page.fill("#g-city", "Belém");
+      await page.getByRole("button", { name: "Pesquisar" }).click();
+      await page.getByRole("alert").filter({ hasText: "GOOGLE_PLACES_API_KEY" }).waitFor();
+      assert(!(await page.locator("table").count()), "exibiu resultados sem integração");
+      await page.screenshot({ path: `${SHOTS}/12-google.png` });
+    });
+    await step("vendedor sem permissão não acessa importação nem Google por URL", async () => {
+      await login(page, "rui.ref", "ruisenha12");
+      for (const url of ["/contatos/importar", "/contatos/google"]) {
+        const res = await page.request.get(BASE + url, { maxRedirects: 0 });
+        assert(res.status() === 307, `${url} => HTTP ${res.status()}`);
+      }
+    });
     await browser.close();
   } finally {
     try { process.kill(-server.pid!); } catch {}

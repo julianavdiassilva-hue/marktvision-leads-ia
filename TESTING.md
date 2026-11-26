@@ -33,10 +33,17 @@ Contato só com telefone (E.164) · validações em português · duplicado em f
 ## Fase 02 — E2E (7 cenários) — ✅ (total acumulado 22/22, Fase 01 reexecutada)
 Etiqueta com cor · cadastro e bloqueio de duplicado · lista + seleção em lote · etiqueta em lote + filtro · ficha com edição, consentimento, responsável e histórico · download CSV · vendedor vê só os seus.
 
+## Fase 03 — Integração (11 cenários) — ✅ (total acumulado 50/50)
+Detecção de colunas · prévia sem gravar (novo/existente/repetido/inválido) · importação para nova lista completando só campos vazios · vendedor só com permissão individual · limite de contatos recusa a importação inteira · bloqueio sem funcionalidade · montagem da consulta · sem chave do Google → mensagem clara · mapeamento da resposta da API (resposta controlada no teste), "já na base", salvar sem duplicar · erro 403 traduzido · limite mensal de pesquisas.
+
+## Fase 03 — E2E (4 cenários) — ✅ (total acumulado 26/26, Fases 01–02 reexecutadas)
+Importação XLSX com detecção, prévia e nova lista · CSV do Excel (ponto e vírgula, Windows-1252) · Google sem chave sem resultados inventados · vendedor bloqueado por URL (HTTP 307).
+
 ## Erros encontrados e corrigidos
 1. Tentativas de login falhas eram gravadas dentro da transação revertida → bloqueio de força bruta nunca ativava. Corrigido: a transação sempre confirma e o erro é lançado depois.
 2. Redirecionamentos de permissão ocorriam após início do streaming (redirecionamento no cliente). Corrigido com guarda central no layout → HTTP 307 real.
 3. Com RLS, `INSERT ... RETURNING` em `users` falhava para admin da empresa (linha ainda sem vínculo). Corrigido gerando o UUID na aplicação.
+6. Limite de contatos contava também contatos já existentes numa importação (bloqueio indevido). Corrigido: só contatos novos contam.
 5. Erros do PostgreSQL (ex.: nome de lista duplicado) chegavam crus aos serviços. Corrigido: `withScope` converte todo erro de banco em mensagem em português.
 4. Troca de ambiente do admin geral mantinha menu antigo → navegação completa após a troca.
 

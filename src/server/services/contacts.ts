@@ -54,12 +54,16 @@ const ownerClause = (ctx: AuthContext, alias = "c", param = "$2") =>
   ctx.role === "seller" ? `and ${alias}.owner_user_id = ${param}` : `and (${param}::uuid is null or true)`;
 const sellerParam = (ctx: AuthContext) => (ctx.role === "seller" ? ctx.user.id : null);
 
-async function assertContactLimit(db: Db, companyId: string, adding: number) {
+/** Retorna uma função que valida o limite a cada contato NOVO (existentes não contam). */
+async function contactLimitGuard(db: Db, companyId: string) {
   const limits = await companyLimits(db, companyId);
-  if (limits.max_contacts == null) return;
-  const { n } = await db.one<{ n: number }>(`select count(*)::int as n from contacts where company_id = $1`, [companyId]);
-  if (n + adding > limits.max_contacts)
-    throw new AppError("LIMIT", `Limite de ${limits.max_contacts} contatos do plano atingido (atual: ${n}).`);
+  if (limits.max_contacts == null) return () => {};
+  const max = limits.max_contacts;
+  let { n } = await db.one<{ n: number }>(`select count(*)::int as n from contacts where company_id = $1`, [companyId]);
+  return () => {
+    if (n + 1 > max) throw new AppError("LIMIT", `Limite de ${max} contatos do plano atingido (atual: ${n}). Nada foi gravado.`);
+    n++;
+  };
 }
 
 /** Procura contato existente pelos identificadores (telefone, WhatsApp, place_id, e-mail). */
@@ -86,10 +90,9 @@ export async function upsertContacts(
   opts: { listId?: string | null; ownerUserId?: string | null } = {},
 ) {
   const result = { created: 0, matched: 0, ids: [] as string[], createdIds: [] as string[] };
-  const newCount = rows.length;
-  if (newCount === 0) return result;
+  if (rows.length === 0) return result;
   const seen = new Map<string, string>();
-  let checkedLimit = false;
+  let limitCheck: (() => void) | null = null;
   for (const r of rows) {
     const key = r.phone_e164 ?? r.google_place_id ?? r.email ?? null;
     if (key && seen.has(key)) { result.ids.push(seen.get(key)!); result.matched++; continue; }
@@ -107,7 +110,8 @@ export async function upsertContacts(
       if (opts.ownerUserId && !existing.owner_user_id) await db.exec(`update contacts set owner_user_id = $2 where id = $1`, [id, opts.ownerUserId]);
       result.matched++;
     } else {
-      if (!checkedLimit) { await assertContactLimit(db, companyId, newCount); checkedLimit = true; }
+      limitCheck ??= await contactLimitGuard(db, companyId);
+      limitCheck();
       id = randomUUID();
       await db.exec(
         `insert into contacts (id, company_id, name, phone_e164, whatsapp_e164, email, organization, city, state, neighborhood,

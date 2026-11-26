@@ -41,6 +41,20 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Vendedor vê/edita somente seus contatos; exclusão e transferência só para administrador | ✅ | integração + E2E |
 | Limite de contatos do plano | ✅ | integração |
 
+## Fase 03 — ✅ concluída (26/11/2026)
+| Item | Status | Evidência |
+|---|---|---|
+| Importação XLS/XLSX/CSV (leitura no navegador, servidor revalida tudo) | ✅ | E2E (XLSX e CSV Windows-1252) |
+| Detecção automática de colunas + associação manual | ✅ | integração + E2E |
+| Prévia: novos / já na base / repetidos / inválidos (com motivo) | ✅ | integração + E2E |
+| Destino: nova lista, lista existente ou só base; responsável opcional | ✅ | integração + E2E |
+| Importação atômica (falha ou limite = nada gravado), sem duplicar | ✅ | integração |
+| Pesquisa Google Places (New): segmento, cidade, UF, bairro/região, paginação | ✅ código / ⏳ validação real (falta chave) | integração com resposta controlada |
+| Marca "Já na base", filtro "somente com telefone", salvar em lista | ✅ | integração |
+| Limite mensal de pesquisas + contador de uso | ✅ | integração |
+| Sem chave: mensagem clara, nenhum resultado inventado | ✅ | integração + E2E |
+| Aviso: telefone público ≠ consentimento | ✅ | E2E |
+
 ## Infraestrutura
 | Item | Status |
 |---|---|
@@ -50,7 +64,6 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 ## Próximas fases
 | Módulo | Status |
 |---|---|
-| Google Places / Importação | ⏳ Fase 03 |
 | Campanhas e scripts | 🔶 tabelas prontas — Fase 04 |
 | WhatsApp Cloud API | 🔶 tabelas prontas — Fase 05 |
 | Conversas | 🔶 Fase 06 |
@@ -59,6 +72,8 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Dashboard completo, metas, relatórios, exportação | ⏳ Fase 09 |
 
 ## Decisões registradas
+- Planilhas lidas no navegador com SheetJS 0.18.5 (a CDN oficial com versões novas é inacessível neste ambiente e a versão do npm tem vulnerabilidades ao ler arquivos maliciosos). Assim o servidor nunca processa o arquivo bruto: recebe só valores mapeados (limite 20.000 linhas) e normaliza/valida novamente. Reavaliar ao publicar: trocar para a versão da CDN do SheetJS.
+- Importação e pesquisa no Google não estão no padrão do vendedor; o administrador pode conceder individualmente.
 - Supabase Auth não utilizado (exige e-mail); autenticação própria com login simples.
 - Senha mínima: 8 caracteres, sem exigência de símbolos; bloqueio de senhas óbvias e senha = login.
 - "Equipe Comercial" é necessária para o admin da empresa gerenciar usuários; sem ela, o admin geral gerencia.

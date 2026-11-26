@@ -6,8 +6,8 @@ Cada fase só é concluída com testes de integração e E2E passando.
 |---|---|---|
 | 01 | Estrutura, banco completo (RLS), autenticação por login, empresas, usuários, planos, permissões, limites, auditoria, identidade visual | ✅ Concluída |
 | 02 | Base central de contatos, listas, etiquetas, deduplicação, consentimento, exportação CSV | ✅ Concluída |
-| 03 | Pesquisa Google Places (real) e importação XLS/XLSX/CSV com mapeamento e prévia | ⏭ Próxima |
-| 04 | Central de campanhas (listagem horizontal) e criação integrada em 7 etapas com scripts + IA | Pendente |
+| 03 | Pesquisa Google Places (real) e importação XLS/XLSX/CSV com mapeamento e prévia | ✅ Concluída (Google aguarda chave) |
+| 04 | Central de campanhas (listagem horizontal) e criação integrada em 7 etapas com scripts + IA | ⏭ Próxima |
 | 05 | WhatsApp Cloud API: conexão, envio via fila, webhooks, status, modelos, opt-out, limites | Pendente |
 | 06 | Central de conversas (3 colunas), transferência, IA por conversa | Pendente |
 | 07 | CRM Kanban/lista, vendas, perdas, equipe comercial, distribuição de leads | Pendente |

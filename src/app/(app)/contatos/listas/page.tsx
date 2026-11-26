@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireModulePage } from "@/server/auth/next";
-import { hasFeature, isCompanyAdmin } from "@/server/guards";
+import { isCompanyAdmin } from "@/server/guards";
 import { listLists } from "@/server/services/lists";
 import { Empty, PageHeader } from "@/components/ui";
 import { ContactsTabs } from "@/components/contacts/tabs";
@@ -15,7 +15,7 @@ export default async function ListsPage() {
   return (
     <>
       <PageHeader title="Contatos e listas" description="Listas organizam contatos da base central e aparecem automaticamente na criação de campanhas." actions={<ListCreateButton />} />
-      <ContactsTabs active="listas" showContacts={hasFeature(ctx, "contacts")} showLists />
+      <ContactsTabs active="listas" ctx={ctx} />
       <div className="panel overflow-x-auto">
         {lists.length === 0 ? <Empty title="Nenhuma lista criada" description="Crie uma lista e adicione contatos pela tela de contatos, por importação de planilha ou pela pesquisa no Google." /> : (
           <table className="table min-w-[720px]">
