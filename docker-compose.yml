@@ -1,0 +1,122 @@
+# =====================================================================
+# Marktvision Leads IA — execução no seu computador (Docker Desktop)
+# Somente a aplicação fica acessível pela rede (porta 3000). Banco de dados e
+# Evolution API ficam em rede interna do Docker, sem acesso externo.
+# Dados persistentes em volumes do Docker (não são apagados ao parar/atualizar).
+# =====================================================================
+name: marktvision
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "5" }
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mv_owner
+      POSTGRES_PASSWORD: ${DB_OWNER_PASSWORD:?Execute INSTALAR.bat}
+      POSTGRES_DB: marktvision
+      APP_DB_PASSWORD: ${DB_APP_PASSWORD:?Execute INSTALAR.bat}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mv_owner -d marktvision"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  evolution:
+    build: ./infra/evolution
+    image: marktvision-evolution:local
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://mv_owner:${DB_OWNER_PASSWORD}@postgres:5432/marktvision
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:?Execute INSTALAR.bat}
+      PORT: "8080"
+      SERVER_URL: http://evolution:8080
+    volumes:
+      - evolution_sessions:/evolution/instances
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8080/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      start_period: 90s
+      retries: 5
+    logging: *logging
+
+  app:
+    build: .
+    image: marktvision-app:local
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgres://mv_app:${DB_APP_PASSWORD}@postgres:5432/marktvision
+      DATABASE_OWNER_URL: postgres://mv_owner:${DB_OWNER_PASSWORD}@postgres:5432/marktvision
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Execute INSTALAR.bat}
+      COOKIE_SECURE: "false"
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      EVOLUTION_API_URL: http://evolution:8080
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
+      EVOLUTION_WEBHOOK_BASE: http://app:3000      # webhooks do WhatsApp nunca saem do computador
+      BACKUP_DIR: /backups
+      GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-claude-opus-5-5}
+      META_APP_ID: ${META_APP_ID:-}
+      META_APP_SECRET: ${META_APP_SECRET:-}
+      META_EMBEDDED_SIGNUP_CONFIG_ID: ${META_EMBEDDED_SIGNUP_CONFIG_ID:-}
+      META_WEBHOOK_VERIFY_TOKEN: ${META_WEBHOOK_VERIFY_TOKEN:-}
+      META_GRAPH_API_VERSION: ${META_GRAPH_API_VERSION:-v27.0}
+    volumes:
+      - ./backups:/backups:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+      evolution: { condition: service_started }
+    logging: *logging
+
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${DB_OWNER_PASSWORD}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      TZ: America/Belem
+    volumes:
+      - ./backups:/backups
+      - evolution_sessions:/sessions:ro
+      - ./infra/backup/backup-loop.sh:/backup-loop.sh:ro
+    entrypoint: ["/bin/sh", "/backup-loop.sh"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    logging: *logging
+
+  # Acesso pela internet SEM domínio: endereço https://xxxx.trycloudflare.com (muda a cada reinício)
+  tunel:
+    image: cloudflare/cloudflared:2026.11.2
+    profiles: ["remoto"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://app:3000
+    depends_on: [app]
+    logging: *logging
+
+  # Acesso pela internet COM domínio próprio (endereço fixo): requer CLOUDFLARE_TUNNEL_TOKEN
+  tunel-fixo:
+    image: cloudflare/cloudflared:2026.11.2
+    profiles: ["dominio"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on: [app]
+    logging: *logging
+
+volumes:
+  pgdata:
+  evolution_sessions:

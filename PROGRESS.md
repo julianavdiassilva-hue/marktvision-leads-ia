@@ -102,6 +102,21 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Infraestrutura Render (serviço privado + disco + schema próprio) | ✅ arquivo pronto / ⏳ publicação | Evolution v2.3.8 executada localmente com o nosso PostgreSQL |
 | Integração oficial da Meta mantida como alternativa | ✅ | E2E |
 
+## Instalação local gratuita (Windows + Docker) — ✅ preparada (26/11/2026)
+| Item | Status | Evidência |
+|---|---|---|
+| docker-compose: aplicação, PostgreSQL 16, Evolution API v2.3.8, backup automático, túnel Cloudflare (temporário ou domínio) | ✅ | conjunto executado com Docker neste ambiente |
+| Somente a aplicação exposta (porta 3000); banco e Evolution em rede interna | ✅ | `docker compose ps` |
+| Usuário do banco da aplicação sem superpoderes (RLS efetivo); senhas geradas por instalação | ✅ | consulta em `pg_roles` |
+| Webhooks do WhatsApp pela rede interna (não saem do computador) | ✅ | sessão criada automaticamente na Evolution real |
+| 3 vendedores simultâneos, cada um vê só o seu; gestora vê todos | ✅ | teste no navegador com 3 sessões paralelas |
+| Persistência após desligar/religar | ✅ | down/up preservou empresa, usuários, contatos e sessão |
+| Reinício automático após falha interna (`restart: unless-stopped`) | ⏳ não reproduzido aqui | mecanismo padrão do Docker |
+| Backup automático diário (banco + sessões, 14 dias) e manual; restauração | ✅ backup automático executado / ⏳ restauração no Windows | arquivos gerados |
+| Administrador sem senha padrão (criado/redefinido por CRIAR_ADMIN.bat, senha só como hash) | ✅ | testado no conjunto |
+| Scripts Windows (.bat + PowerShell 5.1) e manual | ✅ escritos / ⏳ primeira execução no seu Windows | não há Windows neste ambiente |
+| Painel "Saúde dos serviços" (banco, WhatsApp, fila, webhooks, backup) | ✅ | build + E2E |
+
 ## Infraestrutura
 | Item | Status |
 |---|---|

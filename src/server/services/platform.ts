@@ -35,3 +35,30 @@ export async function platformOverview(ctx: AuthContext) {
     return { totals, usage, logs };
   });
 }
+
+/** Saúde dos serviços (monitoramento): banco, servidor de WhatsApp, fila, webhooks e backups. */
+export async function servicesHealth(ctx: AuthContext) {
+  assertPlatformAdmin(ctx);
+  const { readFile, stat } = await import("node:fs/promises");
+  const { join } = await import("node:path");
+  const { evolutionConfig } = await import("../integrations/whatsapp/evolution");
+  const q = await withScope(scopeOf(ctx), (db) => db.one<{ pending: number; failed_24h: number; stuck: number; webhook_errors: number; connections: number; connected: number }>(
+    `select (select count(*)::int from jobs where status = 'pending' and run_at <= now()) as pending,
+            (select count(*)::int from jobs where status = 'failed' and finished_at > now() - interval '24 hours') as failed_24h,
+            (select count(*)::int from jobs where status = 'running' and locked_at < now() - interval '10 minutes') as stuck,
+            (select count(*)::int from webhook_events where processed_at is null and error is not null and received_at > now() - interval '24 hours') as webhook_errors,
+            (select count(*)::int from whatsapp_connections) as connections,
+            (select count(*)::int from whatsapp_connections where status = 'connected') as connected`));
+  let evolution: "ok" | "indisponivel" | "nao_configurado" = "nao_configurado";
+  const ev = evolutionConfig();
+  if (ev.ready) {
+    try { const r = await fetch(`${ev.url}/`, { signal: AbortSignal.timeout(3000) }); evolution = r.ok ? "ok" : "indisponivel"; } catch { evolution = "indisponivel"; }
+  }
+  let lastBackup: string | null = null; let backupError: string | null = null;
+  const dir = process.env.BACKUP_DIR;
+  if (dir) {
+    try { lastBackup = (await readFile(join(dir, "ultimo_backup.txt"), "utf8")).trim(); } catch {}
+    try { const e = join(dir, "ultimo_erro_backup.txt"); const st = await stat(e); backupError = `${(await readFile(e, "utf8")).trim()} (${st.mtime.toISOString()})`; } catch {}
+  }
+  return { database: "ok" as const, evolution, queue: q, backup: { configured: !!dir, last: lastBackup, error: backupError } };
+}

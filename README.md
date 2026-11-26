@@ -3,7 +3,10 @@
 Plataforma SaaS multiempresa de prospecção, campanhas, WhatsApp, atendimento com IA e CRM.
 Documentação: `CLAUDE.md` (regras) · `PROJECT_SPEC.md` · `ARCHITECTURE.md` · `DATABASE.md` · `ROADMAP.md` · `PROGRESS.md` · `TESTING.md` · `INTEGRATIONS.md`.
 
-## Requisitos
+## Instalação no Windows (servidor próprio, sem custo de hospedagem)
+Veja **MANUAL_INSTALACAO.md**: dois cliques em `INSTALAR.bat`.
+
+## Requisitos (desenvolvimento)
 Node.js 22+, PostgreSQL 16+.
 
 ## Instalação

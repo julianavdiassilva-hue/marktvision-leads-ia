@@ -311,7 +311,7 @@ export async function setConnectionMembers(ctx: AuthContext, connectionId: strin
 // ---------------------------------------------------------------------
 
 export function qrConfig() {
-  return { ready: evolutionConfig().ready && !!appBaseUrl() };
+  return { ready: evolutionConfig().ready && !!(process.env.EVOLUTION_WEBHOOK_BASE || appBaseUrl()) };
 }
 const appBaseUrl = () => (process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
 export const hashSecret = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -323,7 +323,8 @@ export async function startQrConnection(ctx: AuthContext, displayName: string, r
   assertCompanyAdmin(ctx);
   const name = parse(requiredText("o nome da conexão", 80), displayName || "WhatsApp");
   const { evolutionApi } = await import("../integrations/whatsapp/evolution");
-  const base = appBaseUrl();
+  // na instalação local os webhooks usam a rede interna do Docker (EVOLUTION_WEBHOOK_BASE)
+  const base = (process.env.EVOLUTION_WEBHOOK_BASE || appBaseUrl()).replace(/\/$/, "");
   if (!base) throw new AppError("INTEGRATION", "APP_URL não configurada: o servidor do WhatsApp não saberia para onde enviar as mensagens.");
   const secret = randomBytes(24).toString("hex");
   return withScope(scopeOf(ctx), async (db) => {

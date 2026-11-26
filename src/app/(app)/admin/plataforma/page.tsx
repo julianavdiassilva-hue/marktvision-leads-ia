@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requirePlatformPage } from "@/server/auth/next";
-import { platformOverview } from "@/server/services/platform";
+import { platformOverview, servicesHealth } from "@/server/services/platform";
 import { Empty, PageHeader, Panel, Stat, StatusDot } from "@/components/ui";
 import { fmtDateTime, fmtInt } from "@/lib/format";
 
@@ -17,7 +17,16 @@ const ACTIONS: Record<string, string> = {
 
 export default async function PlatformPage() {
   const ctx = await requirePlatformPage();
-  const { totals, usage, logs } = await platformOverview(ctx);
+  const [{ totals, usage, logs }, health] = await Promise.all([platformOverview(ctx), servicesHealth(ctx)]);
+  const backupAge = health.backup.last ? (Date.now() - new Date(health.backup.last).getTime()) / 3600_000 : null;
+  const items: [string, boolean | null, string][] = [
+    ["Banco de dados", true, "Operando"],
+    ["Servidor do WhatsApp (QR Code)", health.evolution === "nao_configurado" ? null : health.evolution === "ok", health.evolution === "ok" ? "Operando" : health.evolution === "indisponivel" ? "Sem resposta — verifique os serviços" : "Não configurado"],
+    ["Fila de processamento", health.queue.stuck === 0 && health.queue.failed_24h === 0, `${health.queue.pending} pendente(s) · ${health.queue.failed_24h} falha(s) em 24h${health.queue.stuck ? ` · ${health.queue.stuck} travada(s)` : ""}`],
+    ["Webhooks do WhatsApp", health.queue.webhook_errors === 0, health.queue.webhook_errors ? `${health.queue.webhook_errors} com erro em 24h (reprocessamento automático)` : "Sem erros em 24h"],
+    ["Números conectados", health.queue.connections === 0 ? null : health.queue.connected === health.queue.connections, `${health.queue.connected} de ${health.queue.connections}`],
+    ["Backup automático", !health.backup.configured ? null : !health.backup.error && backupAge != null && backupAge < 26, !health.backup.configured ? "Gerenciado pela hospedagem" : health.backup.error ? `Falha: ${health.backup.error}` : health.backup.last ? `Último: ${fmtDateTime(health.backup.last)}` : "Ainda não executado"],
+  ];
   return (
     <>
       <PageHeader title="Administração da plataforma" description="Utilização real da plataforma e registro de auditoria." />
@@ -31,6 +40,16 @@ export default async function PlatformPage() {
         <Stat label="Mensagens no mês" value={fmtInt(totals.messages_month)} />
         <Stat label="Planos" value={<Link href="/admin/planos" className="text-brand hover:underline">Gerenciar</Link>} />
       </div>
+      <Panel title="Saúde dos serviços" className="mb-6">
+        <ul className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+          {items.map(([l, ok, d]) => (
+            <li key={l} className="flex items-start gap-2.5 text-[15px]">
+              <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${ok === null ? "bg-slate-300" : ok ? "bg-brand" : "bg-danger"}`} />
+              <span><b>{l}:</b> <span className={ok === false ? "font-semibold text-danger" : "text-muted"}>{d}</span></span>
+            </li>
+          ))}
+        </ul>
+      </Panel>
       <Panel title="Utilização por empresa" padded={false} className="mb-6">
         {usage.length === 0 ? <Empty title="Nenhuma empresa cadastrada" /> : (
           <div className="overflow-x-auto"><table className="table min-w-[820px]">

@@ -10,3 +10,6 @@ next-env.d.ts
 tsconfig.tsbuildinfo
 backup/
 docs/teste-import.*
+logs/
+ENDERECOS.txt
+backups/

@@ -51,3 +51,11 @@ src/components/       ui, forms (ActionForm, ToggleSwitch, Modal), shell, admin/
 tests/integration/    Vitest contra banco de testes
 tests/e2e/            Playwright (navegador real)
 ```
+
+## Implantação
+| Modo | Arquivo | Uso |
+|---|---|---|
+| Computador Windows (gratuito) | `docker-compose.yml` + `INSTALAR.bat` (`infra/windows/marktvision.ps1`) | Piloto com 3 vendedores; acesso local e Cloudflare Tunnel |
+| Render (pago) | `render.yaml` | Hospedagem profissional futura |
+| Qualquer VPS com Docker | `docker-compose.yml` | Alternativa profissional |
+A mesma imagem e as mesmas migrações valem nos três modos: migrar = backup (`pg_dump`) + restauração.
