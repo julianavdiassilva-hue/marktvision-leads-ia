@@ -61,6 +61,10 @@ Recebidas com não lidas e visibilidade por vendedor · abrir marca como lida ·
 ## Fase 06 — E2E (4 cenários) — ✅ (total acumulado 41/41, Fases 01–05 reexecutadas)
 Webhook autenticado (segredo errado recusado) → conversa com contador no menu · etiqueta, negociação e transferência · envio sem servidor de WhatsApp: erro claro · visibilidade por vendedor.
 
+## Fase 07 — Integração (10) ✅ (total 116/116) · E2E (3) ✅ (total 44/44)
+Rodízio de leads · negociação com campanha de origem · visibilidade/movimentação por vendedor · ganho/perda exigem dados · venda atualiza contato, campanha, dashboard e indicadores · reabrir desfaz venda · transferência · funil personalizável · metas com realizado · busca/isolamento. E2E: arrastar + seletor de etapa + registrar venda · lista e indicadores · distribuição pela tela de contatos.
+Erros corrigidos: arraste do Kanban não funciona em celular (incluído seletor "Mover para etapa"); mensagens com falha contavam como atendimento; busca por texto sem números casava com qualquer telefone.
+
 ## Instalação local (Docker) — executada neste ambiente
 Conjunto completo (aplicação + PostgreSQL + Evolution v2.3.8 + backup) com Docker Compose: saúde dos serviços, usuário de banco sem superpoderes, migrações, criação de administrador (senha fraca recusada), backup automático, 3 vendedores simultâneos isolados, sessão do WhatsApp criada automaticamente, persistência após desligar/religar ✅. Não executado aqui: scripts .bat/PowerShell (não há Windows) e leitura real do QR (rede do WhatsApp bloqueada).
 

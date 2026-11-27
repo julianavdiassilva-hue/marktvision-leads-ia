@@ -102,6 +102,19 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Infraestrutura Render (serviço privado + disco + schema próprio) | ✅ arquivo pronto / ⏳ publicação | Evolution v2.3.8 executada localmente com o nosso PostgreSQL |
 | Integração oficial da Meta mantida como alternativa | ✅ | E2E |
 
+## Fase 07 — CRM e Equipe Comercial — ✅ concluída (27/11/2026)
+| Item | Status | Evidência |
+|---|---|---|
+| Kanban com arrastar e soltar + seletor "Mover para etapa" (celular/teclado) e visualização em lista | ✅ | E2E |
+| Valor por etapa, vendedor, campanha de origem, próximo retorno (atrasado em vermelho), observações | ✅ | integração + E2E |
+| Venda exige valor; registra em `sales` e atualiza contato, vendedor, campanha e dashboard; reabrir desfaz a venda | ✅ | integração + E2E |
+| Perda exige motivo (lista padrão + outro) | ✅ | integração |
+| Funil personalizável (criar, renomear, reordenar, excluir vazias; venda/perda fixas) | ✅ | integração |
+| Vendedor vê/move só as próprias negociações; transferência pelo administrador leva contato e conversa | ✅ | integração |
+| Indicadores por vendedor no período: recebidos, atendidos, pendentes, negociações, vendas, valor, conversão, 1ª resposta, meta | ✅ | integração + E2E |
+| Distribuição de leads em rodízio equilibrado (tela de contatos) | ✅ | integração + E2E |
+| Metas individuais e coletivas com realizado real | ✅ | integração |
+
 ## Fase 06 — Central de Conversas — ✅ concluída (26/11/2026)
 | Item | Status | Evidência |
 |---|---|---|
@@ -138,7 +151,6 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 ## Próximas fases
 | Módulo | Status |
 |---|---|
-| CRM / Equipe (indicadores, distribuição, metas) | 🔶 funil padrão criado automaticamente — Fase 07 |
 | Contexto + Chatbot IA | 🔶 `ai_settings` criado por empresa — Fase 08 |
 | Dashboard completo, metas, relatórios, exportação | ⏳ Fase 09 |
 

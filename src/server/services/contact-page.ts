@@ -14,6 +14,7 @@ export async function contactPageData(ctx: AuthContext) {
     canDelete: isCompanyAdmin(ctx), canAssign: isCompanyAdmin(ctx), isSeller: ctx.role === "seller",
     canExport: hasFeature(ctx, "data_export") && hasFeature(ctx, "contacts"),
     canTag: hasFeature(ctx, "tags"), canLists: hasFeature(ctx, "contact_lists"),
+    canDistribute: isCompanyAdmin(ctx) && hasFeature(ctx, "sales_team"),
   };
   return { lists, tags, team, perms };
 }

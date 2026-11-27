@@ -18,7 +18,11 @@ mkdirSync(SHOTS, { recursive: true });
 const results: { name: string; ok: boolean; error?: string }[] = [];
 async function step(name: string, fn: () => Promise<void>) {
   try { await fn(); results.push({ name, ok: true }); console.log(`  ✓ ${name}`); }
-  catch (e) { results.push({ name, ok: false, error: (e as Error).message.split("\n")[0] }); console.log(`  ✗ ${name}\n    ${(e as Error).message.split("\n")[0]}`); }
+  catch (e) {
+    results.push({ name, ok: false, error: (e as Error).message.split("\n")[0] });
+    console.log(`  ✗ ${name}\n    ${(e as Error).message.split("\n").slice(0, 3).join(" | ")}`);
+    try { await (globalThis as { __page?: Page }).__page?.screenshot({ path: `${process.env.E2E_FAIL_DIR ?? "/tmp"}/falha-${results.length}.png` }); } catch {}
+  }
 }
 function assert(cond: unknown, msg: string) { if (!cond) throw new Error(msg); }
 
@@ -41,6 +45,7 @@ async function main() {
     for (let i = 0; i < 60; i++) { try { if ((await fetch(`${BASE}/api/health`)).ok) break; } catch {} await new Promise((r) => setTimeout(r, 500)); }
     const browser = await chromium.launch();
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
+    (globalThis as { __page?: Page }).__page = page;
 
     console.log("Fase 01 — fluxo no navegador");
     await step("login inválido mostra erro em português", async () => {
@@ -486,6 +491,46 @@ async function main() {
       await login(page, "rui.ref", "ruisenha12");
       await page.goto(`${BASE}/conversas`);
       await page.getByText(/Nenhuma conversa aqui/).waitFor();
+    });
+
+    console.log("Fase 07 — CRM e equipe comercial");
+    await step("Kanban: arrastar negociação entre etapas e registrar venda", async () => {
+      await login(page, "paula.ref", "paulasenha1");
+      await page.goto(`${BASE}/crm`);
+      const card = page.getByTestId("card-Carlos Comprador");
+      await card.waitFor();
+      await card.dragTo(page.getByTestId("etapa-Primeiro contato"));
+      await page.getByTestId("etapa-Primeiro contato").getByTestId("card-Carlos Comprador").waitFor();
+      await page.getByTestId("card-Carlos Comprador").click();
+      await page.selectOption("#e-stage", { label: "Em negociação" });
+      await page.getByTestId("etapa-Em negociação").getByTestId("card-Carlos Comprador").waitFor();
+      await page.getByTestId("card-Carlos Comprador").click();
+      await page.selectOption("#e-stage", { label: "Venda realizada" });
+      await page.getByRole("dialog", { name: "Registrar venda" }).waitFor();
+      await page.fill("#win-amount", "2.400,00");
+      await page.getByRole("dialog").getByRole("button", { name: "Registrar venda" }).click();
+      await page.getByText(/Venda registrada!/).waitFor();
+      await page.getByTestId("etapa-Venda realizada").getByText("R$ 2.400,00").first().waitFor();
+      await page.screenshot({ path: `${SHOTS}/18-crm-kanban.png` });
+    });
+    await step("lista do CRM e indicadores da equipe refletem a venda", async () => {
+      await page.goto(`${BASE}/crm?v=lista`);
+      await page.getByRole("cell", { name: "R$ 2.400,00" }).waitFor();
+      await page.goto(`${BASE}/equipe`);
+      await page.getByRole("row", { name: /Sara Vendas/ }).getByText("R$ 2.400,00").waitFor();
+      await page.screenshot({ path: `${SHOTS}/19-equipe.png`, fullPage: true });
+    });
+    await step("distribuição de leads entre vendedores pela tela de contatos", async () => {
+      await page.goto(`${BASE}/contatos?responsavel=none`);
+      await page.getByRole("checkbox", { name: "Selecionar página" }).check();
+      page.once("dialog", (d) => d.accept());
+      await page.getByRole("button", { name: "Distribuir entre vendedores" }).click();
+      await page.getByRole("dialog").getByLabel("Rui Vendas").check();
+      await page.getByRole("dialog").getByLabel("Tiago Novo").check();
+      await page.getByRole("dialog").getByRole("button", { name: "Distribuir" }).click();
+      await page.getByRole("dialog").waitFor({ state: "detached" });
+      await page.reload();
+      assert((await page.locator("tbody tr").count()) === 0 || await page.getByText("Nenhum contato encontrado").count() > 0, "ainda há contatos sem responsável");
     });
     await browser.close();
   } finally {

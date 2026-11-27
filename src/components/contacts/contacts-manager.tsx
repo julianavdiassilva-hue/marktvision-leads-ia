@@ -14,7 +14,7 @@ import { fmtDate, fmtInt } from "@/lib/format";
 import type { ContactFilters, ContactRow } from "@/server/services/contacts";
 
 type Opt = { id: string; name: string };
-export type ContactPerms = { canDelete: boolean; canAssign: boolean; canExport: boolean; canTag: boolean; canLists: boolean; isSeller: boolean };
+export type ContactPerms = { canDelete: boolean; canAssign: boolean; canExport: boolean; canTag: boolean; canLists: boolean; isSeller: boolean; canDistribute?: boolean };
 
 const PARAM: Record<keyof ContactFilters, string> = { q: "q", listId: "lista", tagId: "etiqueta", ownerId: "responsavel", source: "origem", status: "situacao", consent: "consentimento", page: "pagina" };
 
@@ -87,7 +87,7 @@ export function ContactsManager({ rows, total, page, pages, filters, lists, tags
       )}
 
       {count > 0 && (
-        <BulkBar count={count} pending={pending} lists={lists} tags={tags} team={team} perms={perms} fixedListId={fixedListId}
+        <BulkBar count={count} pending={pending} lists={lists} tags={tags} team={team} perms={perms} fixedListId={fixedListId} selectionRef={selection}
           onRun={run} onClear={() => { setSelected(new Set()); setAllMatching(false); }} />
       )}
 
@@ -187,8 +187,8 @@ function FilterSelect({ label, value, onChange, options }: { label: string; valu
   );
 }
 
-function BulkBar({ count, pending, lists, tags, team, perms, fixedListId, onRun, onClear }: {
-  count: number; pending: boolean; lists: Opt[]; tags: Opt[]; team: Opt[]; perms: ContactPerms; fixedListId?: string;
+function BulkBar({ count, pending, lists, tags, team, perms, fixedListId, onRun, onClear, selectionRef }: {
+  count: number; pending: boolean; lists: Opt[]; tags: Opt[]; team: Opt[]; perms: ContactPerms; fixedListId?: string; selectionRef: Selection;
   onRun: (op: BulkOp, arg?: string | null, extra?: string, confirm?: string) => void; onClear: () => void;
 }) {
   const [consent, setConsent] = useState(false);
@@ -210,6 +210,7 @@ function BulkBar({ count, pending, lists, tags, team, perms, fixedListId, onRun,
       {pick("status", "Alterar situação…", Object.entries(STATUS_LABEL))}
       {perms.canAssign && pick("owner", "Transferir para…", [...team.map((t) => [t.id, t.name] as [string, string]), ["__none", "Sem responsável"]], (n) => `Transferir ${count} contato(s) para ${n}?`)}
       <button className="btn btn-secondary btn-sm" disabled={pending} onClick={() => setConsent(true)}>Consentimento</button>
+      {perms.canDistribute && <DistributeButton team={team} pending={pending} selection={selectionRef} />}
       {perms.canDelete && <button className="btn btn-danger btn-sm" disabled={pending} onClick={() => onRun("delete", null, undefined, `Excluir definitivamente ${count} contato(s)? O histórico deles também será removido.`)}>Excluir</button>}
       <button className="ml-auto text-[14px] font-semibold text-muted hover:text-ink" onClick={onClear}>Limpar seleção</button>
       <ConsentModal open={consent} onClose={() => setConsent(false)} count={count} onSave={(s, src) => { setConsent(false); onRun("consent", s, src); }} />
@@ -239,5 +240,32 @@ export function ConsentModal({ open, onClose, count, onSave }: { open: boolean; 
         <button className="btn btn-primary" onClick={() => onSave(status, source)}>Registrar</button>
       </div>
     </Modal>
+  );
+}
+
+function DistributeButton({ team, pending, selection }: { team: Opt[]; pending: boolean; selection: Selection }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [only, setOnly] = useState(true);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, start] = useTransition();
+  return (
+    <>
+      <button className="btn btn-secondary btn-sm" disabled={pending} onClick={() => setOpen(true)}>Distribuir entre vendedores</button>
+      <Modal open={open} onClose={() => setOpen(false)} title="Distribuir leads" description="Rodízio entre os vendedores escolhidos, começando por quem tem menos contatos. Conversas e negociações abertas acompanham o contato.">
+        <div className="space-y-2">{team.map((t) => (
+          <label key={t.id} className="flex items-center gap-2.5 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-[#008C48]" checked={sel.has(t.id)}
+            onChange={(e) => { const s = new Set(sel); if (e.target.checked) s.add(t.id); else s.delete(t.id); setSel(s); }} />{t.name}</label>))}</div>
+        <label className="mt-4 flex items-center gap-2.5 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-[#008C48]" checked={only} onChange={(e) => setOnly(e.target.checked)} />Somente contatos sem responsável</label>
+        {msg && <p className="mt-3 text-[14.5px] font-medium text-danger">{msg}</p>}
+        <div className="mt-5 flex justify-end gap-2"><button className="btn btn-secondary" onClick={() => setOpen(false)}>Cancelar</button>
+          <button className="btn btn-primary" disabled={busy || !sel.size} onClick={() => start(async () => {
+            const { distributeAction } = await import("@/app/actions/crm");
+            const r = await distributeAction(selection, [...sel], only);
+            if (!r.ok) setMsg(r.error); else { setOpen(false); router.refresh(); alert(r.message); }
+          })}>Distribuir</button></div>
+      </Modal>
+    </>
   );
 }
