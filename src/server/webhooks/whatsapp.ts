@@ -65,7 +65,9 @@ async function resolveContact(db: Db, companyId: string, p: { phone?: string | n
 async function insertMessage(db: Db, a: { companyId: string; conversationId: string; contactId: string; direction: "inbound" | "outbound";
   senderType: "contact" | "user"; m: WaMessage; channel: "api" | "business_app" | "history"; status: string }) {
   const { body, mediaType } = messageText(a.m);
-  const ts = a.m.timestamp ? new Date(Number(a.m.timestamp) * 1000) : new Date();
+  // tempo real: horário de chegada (ms, preserva a ordem); histórico/atrasadas: horário original do WhatsApp
+  const orig = a.m.timestamp ? new Date(Number(a.m.timestamp) * 1000) : null;
+  const ts = a.channel === "history" && orig ? orig : orig && Date.now() - orig.getTime() > 5 * 60_000 ? orig : new Date();
   const r = await db.query<{ id: string }>(
     `insert into messages (company_id, conversation_id, contact_id, direction, sender_type, body, media_type, provider_message_id, status, channel, created_at)
      values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) on conflict (company_id, provider_message_id) where provider_message_id is not null do nothing returning id`,

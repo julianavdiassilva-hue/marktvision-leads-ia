@@ -79,6 +79,13 @@ export const evolutionProvider: WhatsAppProvider = {
     if (!r.key?.id) throw new ProviderError("O servidor do WhatsApp não confirmou o envio.", true);
     return { providerMessageId: r.key.id };
   },
+  async sendMedia(c, to, m) {
+    const r = await evo<{ key?: { id?: string } }>(`/message/sendMedia/${encodeURIComponent(c.phoneNumberId)}`, {
+      method: "POST", timeoutMs: 120_000,
+      body: { number: to.replace(/\D/g, ""), mediatype: m.type, mimetype: m.mimetype, caption: m.caption ?? "", fileName: m.fileName, media: m.base64 } });
+    if (!r.key?.id) throw new ProviderError("O servidor do WhatsApp não confirmou o envio do arquivo.", true);
+    return { providerMessageId: r.key.id };
+  },
   async sendTemplate() {
     throw new ProviderError("Modelos da Meta não se aplicam à conexão por QR Code. Use a mensagem do Script.", false);
   },

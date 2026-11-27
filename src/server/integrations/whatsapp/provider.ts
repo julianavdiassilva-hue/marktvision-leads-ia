@@ -24,4 +24,6 @@ export interface WhatsAppProvider {
   listTemplates(c: ProviderCredentials): Promise<TemplateInfo[]>;
   sendText(c: ProviderCredentials, toE164: string, body: string): Promise<SendResult>;
   sendTemplate(c: ProviderCredentials, toE164: string, name: string, language: string, params: string[]): Promise<SendResult>;
+  /** Arquivos/imagens (opcional por provedor). */
+  sendMedia?(c: ProviderCredentials, toE164: string, m: { type: "image" | "document" | "video" | "audio"; mimetype: string; base64: string; fileName: string; caption?: string }): Promise<SendResult>;
 }

@@ -102,6 +102,18 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Infraestrutura Render (serviço privado + disco + schema próprio) | ✅ arquivo pronto / ⏳ publicação | Evolution v2.3.8 executada localmente com o nosso PostgreSQL |
 | Integração oficial da Meta mantida como alternativa | ✅ | E2E |
 
+## Fase 06 — Central de Conversas — ✅ concluída (26/11/2026)
+| Item | Status | Evidência |
+|---|---|---|
+| 3 colunas estilo WhatsApp Web: lista (busca, filtros, não lidas, etiquetas, responsável), histórico + envio, painel do contato/CRM | ✅ | E2E |
+| Mensagens recebidas entram sozinhas (webhook) com não lidas e contador no menu; atualização automática a cada 5 s | ✅ | integração + E2E |
+| Envio de texto e arquivos/imagens pelo provedor real; falha registrada e informada (sem simular) | ✅ | integração + E2E |
+| Respostas rápidas (/atalho) e sugestão de resposta com IA (revisada pelo vendedor) | ✅ / ⏳ IA aguarda chave | integração |
+| Vendedor vê só as conversas atribuídas; transferência leva junto contato e negociação | ✅ | integração + E2E |
+| IA por conversa; ao assumir ou responder, a IA para | ✅ | integração |
+| Etiquetas, criar negociação no CRM, próximo retorno, observações, histórico comercial, encerrar/reabrir | ✅ | integração + E2E |
+| Origem do contato na campanha exibida | ✅ | integração |
+
 ## Instalação local gratuita (Windows + Docker) — ✅ preparada (26/11/2026)
 | Item | Status | Evidência |
 |---|---|---|
@@ -126,7 +138,6 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 ## Próximas fases
 | Módulo | Status |
 |---|---|
-| Conversas | 🔶 Fase 06 |
 | CRM / Equipe (indicadores, distribuição, metas) | 🔶 funil padrão criado automaticamente — Fase 07 |
 | Contexto + Chatbot IA | 🔶 `ai_settings` criado por empresa — Fase 08 |
 | Dashboard completo, metas, relatórios, exportação | ⏳ Fase 09 |

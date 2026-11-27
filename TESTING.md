@@ -55,6 +55,15 @@ Módulo com botão de conexão e orientações · conexão manual validada na Me
 Servidor não configurado · vendedor bloqueado · sessão própria com webhook e segredo (guardado só como hash) · QR renovado e código de pareamento · outra empresa bloqueada · autenticação do webhook · conexão aberta registra número · identificação por telefone/LID e grupos ignorados · mensagem recebida idempotente e distribuída ao vendedor · eco do celular · campanha por QR com status e resposta, sem duplicar · SAIR com confirmação · desconexão pelo celular e exclusão.
 **Teste real local:** imagem oficial `evoapicloud/evolution-api:v2.3.8` + `infra/evolution` executada com o PostgreSQL do projeto: migrações no schema `evolution_api` (37 tabelas, schema `public` intacto), autenticação, criação/consulta/remoção de sessão a partir do código da Marktvision ✅. Geração do QR não validada aqui (rede do WhatsApp bloqueada neste ambiente) — validar no Render.
 
+## Fase 06 — Integração (12 cenários) — ✅ (total acumulado 106/106)
+Recebidas com não lidas e visibilidade por vendedor · abrir marca como lida · resposta real pelo provedor e IA desligada · falha registrada e informada · envio de imagem · IA por conversa / assumir · transferência com contato · negociação sem duplicar · retorno, observações, encerrar e reabrir com nova mensagem · respostas rápidas · sugestão com IA (permissão/chave) · isolamento.
+
+## Fase 06 — E2E (4 cenários) — ✅ (total acumulado 41/41, Fases 01–05 reexecutadas)
+Webhook autenticado (segredo errado recusado) → conversa com contador no menu · etiqueta, negociação e transferência · envio sem servidor de WhatsApp: erro claro · visibilidade por vendedor.
+
+## Instalação local (Docker) — executada neste ambiente
+Conjunto completo (aplicação + PostgreSQL + Evolution v2.3.8 + backup) com Docker Compose: saúde dos serviços, usuário de banco sem superpoderes, migrações, criação de administrador (senha fraca recusada), backup automático, 3 vendedores simultâneos isolados, sessão do WhatsApp criada automaticamente, persistência após desligar/religar ✅. Não executado aqui: scripts .bat/PowerShell (não há Windows) e leitura real do QR (rede do WhatsApp bloqueada).
+
 ## Pendente de validação real (credenciais externas)
 Embedded Signup e envio/recebimento reais dependem do app da Marktvision aprovado como Tech Provider na Meta e do domínio público (Render).
 
@@ -62,6 +71,8 @@ Embedded Signup e envio/recebimento reais dependem do app da Marktvision aprovad
 1. Tentativas de login falhas eram gravadas dentro da transação revertida → bloqueio de força bruta nunca ativava. Corrigido: a transação sempre confirma e o erro é lançado depois.
 2. Redirecionamentos de permissão ocorriam após início do streaming (redirecionamento no cliente). Corrigido com guarda central no layout → HTTP 307 real.
 3. Com RLS, `INSERT ... RETURNING` em `users` falhava para admin da empresa (linha ainda sem vínculo). Corrigido gerando o UUID na aplicação.
+10. Falha de envio na conversa era desfeita junto com a transação (sumia do histórico). Corrigido: registra e depois informa.
+9. Mensagens recebidas no mesmo segundo podiam aparecer fora de ordem. Corrigido: horário de chegada com milissegundos (histórico mantém o horário original).
 8. Teste de campanha dependia da ordem de envio (contatos gravados no mesmo instante). Corrigido o teste; rodado 3x seguidas sem falha.
 7. Indicadores da listagem de campanhas sobrepostos em telas de 1440 px. Corrigido com linha de indicadores em texto ("3 contatos | 0 enviados | …").
 6. Limite de contatos contava também contatos já existentes numa importação (bloqueio indevido). Corrigido: só contatos novos contam.

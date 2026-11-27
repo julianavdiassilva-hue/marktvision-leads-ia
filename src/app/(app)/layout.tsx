@@ -5,6 +5,7 @@ import { ruleFor } from "@/lib/route-guard";
 import { MAIN_NAV, PLATFORM_NAV, type NavItem } from "@/lib/navigation";
 import { isCompanyAdmin } from "@/server/guards";
 import { listCompanyOptions } from "@/server/services/companies";
+import { unreadCount } from "@/server/services/conversations";
 import { Shell } from "@/components/shell";
 import { ROLE_LABEL } from "@/lib/features";
 
@@ -25,9 +26,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const main = ctx.company ? MAIN_NAV.filter(visible) : MAIN_NAV.filter((i) => i.href === "/configuracoes");
   const platform = ctx.user.isPlatformAdmin ? PLATFORM_NAV : [];
   const companies = ctx.user.isPlatformAdmin ? await listCompanyOptions(ctx) : [];
+  const unread = await unreadCount(ctx).catch(() => 0);
   return (
     <Shell
-      main={main.map(({ href, label, icon, phase }) => ({ href, label, icon, phase }))}
+      main={main.map(({ href, label, icon, phase }) => ({ href, label, icon, phase, badge: href === "/conversas" && unread ? unread : undefined }))}
       platform={platform.map(({ href, label, icon }) => ({ href, label, icon }))}
       user={{ name: ctx.user.name, username: ctx.user.username, role: ROLE_LABEL[ctx.role] }}
       company={ctx.company}

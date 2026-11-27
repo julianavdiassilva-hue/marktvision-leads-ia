@@ -11,7 +11,7 @@ import { Logo } from "./logo";
 import { logoutAction, switchCompanyAction } from "@/app/actions/auth";
 
 const ICONS = { Activity, BarChart3, BookOpen, Bot, Building2, KanbanSquare, LayoutDashboard, Megaphone, MessageCircle, MessagesSquare, Settings, ShieldCheck, Tags, UserCog, UserRound, Users };
-type Item = { href: string; label: string; icon: string; phase?: number };
+type Item = { href: string; label: string; icon: string; phase?: number; badge?: number };
 
 export function Shell({ main, platform, user, company, companies, isPlatformAdmin, children }: {
   main: Item[]; platform: Item[]; user: { name: string; username: string; role: string };
@@ -86,6 +86,7 @@ function NavGroup({ items, pathname, onNavigate }: { items: Item[]; pathname: st
                 active ? "bg-brand-light font-semibold text-brand-dark" : "text-ink/85 hover:bg-white hover:text-ink")}>
               <Icon className={clsx("h-[19px] w-[19px] shrink-0", active ? "text-brand" : "text-muted group-hover:text-brand")} strokeWidth={2} />
               <span className="flex-1 truncate">{it.label}</span>
+              {it.badge ? <span className="grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1.5 text-[12px] font-bold text-white" aria-label={`${it.badge} não lidas`}>{it.badge > 99 ? "99+" : it.badge}</span> : null}
               {it.phase && <span className="rounded bg-white px-1.5 text-[11px] font-semibold text-muted ring-1 ring-line" title={`Disponível na Fase ${it.phase}`}>F{it.phase}</span>}
             </Link>
           </li>

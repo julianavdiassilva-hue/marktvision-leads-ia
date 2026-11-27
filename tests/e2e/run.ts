@@ -440,6 +440,53 @@ async function main() {
       const r = await page.request.get(`${BASE}/whatsapp`, { maxRedirects: 0 });
       assert(r.status() === 307, "vendedor acessou /whatsapp: " + r.status());
     });
+
+    console.log("Fase 06 — central de conversas");
+    await step("mensagem recebida pelo WhatsApp (webhook autenticado) aparece na central com não lidas", async () => {
+      const { Client } = await import("pg"); const { createHash } = await import("node:crypto");
+      const c = new Client({ connectionString: process.env.TEST_DATABASE_OWNER_URL }); await c.connect();
+      await c.query(`insert into whatsapp_connections (company_id, provider, connection_mode, display_name, instance_name, webhook_secret_hash, status, phone_number)
+                     select id, 'evolution', 'qr', 'Comercial QR', 'mv-e2e', $1, 'connected', '+559130001234' from companies where name = 'Refrigeração Pará'`,
+        [createHash("sha256").update("segredo-e2e").digest("hex")]);
+      await c.end();
+      const bad = await page.request.post(`${BASE}/api/webhooks/evolution`, { headers: { "x-mv-webhook-secret": "errado" }, data: { event: "messages.upsert", instance: "mv-e2e", data: {} } });
+      assert(bad.status() === 401, "webhook aceitou segredo errado");
+      const r = await page.request.post(`${BASE}/api/webhooks/evolution`, { headers: { "x-mv-webhook-secret": "segredo-e2e" },
+        data: { event: "messages.upsert", instance: "mv-e2e", data: { key: { remoteJid: "5591966661234@s.whatsapp.net", fromMe: false, id: "E2E-IN-1" },
+          pushName: "Carlos Comprador", message: { conversation: "Bom dia! Quero orçamento de 2 aparelhos." }, messageTimestamp: Math.floor(Date.now() / 1000) } } });
+      assert(r.status() === 200, "webhook recusou: " + r.status());
+      await login(page, "paula.ref", "paulasenha1");
+      await page.locator("aside nav").getByText("1", { exact: true }).waitFor();
+      await page.goto(`${BASE}/conversas`);
+      await page.getByRole("button", { name: /Carlos Comprador/ }).waitFor();
+    });
+    await step("abrir conversa, etiqueta, negociação no CRM e transferência ao vendedor", async () => {
+      await page.getByRole("button", { name: /Carlos Comprador/ }).click();
+      await page.getByTestId("chat-messages").getByText("Quero orçamento de 2 aparelhos").waitFor();
+      await page.getByRole("combobox", { name: "Adicionar etiqueta" }).selectOption({ label: "Cliente quente" });
+      await page.locator("aside").getByText("Cliente quente").first().waitFor();
+      await page.getByRole("button", { name: "Criar negociação" }).click();
+      await page.getByText("Negociação criada no CRM.").waitFor();
+      await page.locator("aside").getByText("Novo lead").waitFor();
+      await page.screenshot({ path: `${SHOTS}/17-conversas.png` });
+      await page.getByRole("combobox", { name: "Transferir conversa" }).selectOption({ label: "Sara Vendas" });
+      await page.getByText("Conversa transferida.").waitFor();
+    });
+    await step("envio sem servidor do WhatsApp disponível: erro claro, nada simulado", async () => {
+      await page.getByRole("textbox", { name: "Mensagem" }).fill("Olá Carlos!");
+      await page.getByRole("button", { name: "Enviar", exact: true }).click();
+      await page.getByRole("alert").filter({ hasText: /não enviada|não foi configurado/ }).waitFor();
+    });
+    await step("vendedora vê a conversa transferida e o contato; outro vendedor não vê", async () => {
+      await login(page, "sara.ref", "sarasenha1");
+      await page.goto(`${BASE}/conversas`);
+      await page.getByRole("button", { name: /Carlos Comprador/ }).waitFor();
+      await page.goto(`${BASE}/contatos`);
+      await page.getByRole("link", { name: "Carlos Comprador" }).waitFor();
+      await login(page, "rui.ref", "ruisenha12");
+      await page.goto(`${BASE}/conversas`);
+      await page.getByText(/Nenhuma conversa aqui/).waitFor();
+    });
     await browser.close();
   } finally {
     try { process.kill(-server.pid!); } catch {}

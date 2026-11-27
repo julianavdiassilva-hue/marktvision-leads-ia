@@ -11,5 +11,8 @@ export const CONSENT_LABEL: Record<string, string> = {
 export const EVENT_LABEL: Record<string, string> = {
   "contact.created": "Contato cadastrado", "contact.updated": "Dados atualizados", "contact.owner_changed": "Responsável alterado",
   "contact.tag_added": "Etiqueta aplicada", "contact.tag_removed": "Etiqueta removida", "contact.consent": "Consentimento registrado",
-  "contact.list_added": "Adicionado à lista",
+  "contact.list_added": "Adicionado à lista", "contact.replied": "Respondeu no WhatsApp", "conversation.transferred": "Conversa transferida",
+  "conversation.assumed": "Atendimento assumido", "conversation.ai_on": "IA ativada na conversa", "conversation.ai_off": "IA desativada na conversa",
+  "conversation.follow_up": "Retorno agendado", "opportunity.created": "Negociação criada", "opportunity.stage_changed": "Etapa do CRM alterada",
+  "opportunity.won": "Venda registrada", "opportunity.lost": "Negociação perdida", "ai.handoff": "IA transferiu para vendedor",
 };
