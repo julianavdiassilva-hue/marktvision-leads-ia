@@ -60,6 +60,12 @@ Política padrão das tabelas comerciais: `company_id = app_company_id() OR app_
 `whatsapp_connections.provider` aceita `evolution`; `connection_mode` aceita `qr`; `instance_name` (único) e `webhook_secret_hash`.
 A Evolution API usa o MESMO PostgreSQL em schema separado `evolution_api` (criado pelas migrações dela; não afetado pelo RLS nem pelo reset do schema `public`).
 
+## 0009 — Agente de IA
+`ai_settings.auto_reply_new` e `outside_hours_message`; `conversations.ai_last_outside_notice_at`; `knowledge_documents.storage_path` opcional (texto extraído fica no banco).
+
+## Fase 09
+Sem tabelas novas: dashboard e relatórios são consultas sobre `contacts`, `campaigns`, `campaign_contacts`, `messages`, `conversations`, `opportunities`, `sales` e `goals` (sempre filtradas por `company_id` e RLS).
+
 ## Triggers
 - `set_updated_at` em tabelas editáveis.
 - `create_default_pipeline` (após inserir empresa): funil com 9 etapas (Novo lead … Venda realizada, Perdido) + `ai_settings`.

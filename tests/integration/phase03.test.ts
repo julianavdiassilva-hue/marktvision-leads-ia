@@ -93,6 +93,26 @@ describe("Fase 03 — importação de planilhas", () => {
   });
 });
 
+describe("Fase 03 — pesquisa gratuita (OpenStreetMap)", () => {
+  it("traduz o segmento, mapeia endereço/telefone e salva com origem identificada", async () => {
+    delete process.env.GOOGLE_PLACES_API_KEY; delete process.env.SEARCH_PROVIDER;
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => { calls.push(url); return new Response(JSON.stringify([
+      { place_id: 11, osm_type: "node", osm_id: 999, name: "Clínica Sorriso Livre", type: "dentist",
+        address: { road: "Travessa Quintino", house_number: "100", suburb: "Umarizal", city: "Belém", "ISO3166-2-lvl4": "BR-PA" }, extratags: { phone: "+55 91 3333-1000", website: "https://sorriso.example" } },
+      { place_id: 12, osm_type: "way", osm_id: 55, name: "Odonto Sem Telefone", type: "dentist", address: { city: "Belém" } }]), { status: 200 }); }));
+    const r = await searchCompanies(gestor, { keyword: "clínicas odontológicas", city: "Belém", state: "PA" });
+    expect(new URL(calls[0]).searchParams.get("q")).toBe("dentist in Belém, PA");
+    expect(r.provider).toBe("osm");
+    expect(r.results[0]).toMatchObject({ name: "Clínica Sorriso Livre", phoneE164: "+559133331000", city: "Belém", state: "PA", neighborhood: "Umarizal", category: "Dentista",
+      address: "Travessa Quintino, 100 - Umarizal - Belém - PA", placeId: "osm:node999" });
+    expect(r.results[1].phoneE164).toBeNull();
+    const saved = await savePlaces(gestor, r.results, { query: r.query });
+    expect(saved.created).toBe(2);
+    vi.unstubAllGlobals();
+  });
+});
+
 describe("Fase 03 — pesquisa no Google (código de integração)", () => {
   it("monta a consulta a partir de segmento e localização", () => {
     expect(buildQuery({ keyword: "Clínicas odontológicas", city: "Belém", state: "PA", neighborhood: "Umarizal" }))
@@ -100,12 +120,13 @@ describe("Fase 03 — pesquisa no Google (código de integração)", () => {
   });
 
   it("sem chave configurada informa claramente (sem resultados inventados)", async () => {
-    delete process.env.GOOGLE_PLACES_API_KEY;
+    delete process.env.GOOGLE_PLACES_API_KEY; process.env.SEARCH_PROVIDER = "google";
     await expectError(searchCompanies(gestor, { keyword: "restaurantes", city: "Ananindeua" }), "INTEGRATION", /GOOGLE_PLACES_API_KEY/);
+    delete process.env.SEARCH_PROVIDER;
   });
 
   it("mapeia a resposta da API, marca quem já está na base e salva sem duplicar", async () => {
-    process.env.GOOGLE_PLACES_API_KEY = "chave-de-teste";
+    process.env.GOOGLE_PLACES_API_KEY = "chave-de-teste"; delete process.env.SEARCH_PROVIDER;
     const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
       const body = JSON.parse(String(init.body));
       expect(body.textQuery).toBe("escolas particulares em Benevides - PA");

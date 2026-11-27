@@ -127,6 +127,26 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Etiquetas, criar negociação no CRM, próximo retorno, observações, histórico comercial, encerrar/reabrir | ✅ | integração + E2E |
 | Origem do contato na campanha exibida | ✅ | integração |
 
+## Fase 08 — Contexto da empresa e Chatbot IA — ✅ concluída (27/11/2026)
+| Item | Status |
+|---|---|
+| Camada de IA com vários provedores: Anthropic (pago) e compatíveis com OpenAI — Google Gemini (franquia gratuita), Groq (franquia gratuita), Ollama (local, gratuito) | ✅ (`AI_PROVIDER`, `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`) |
+| Contexto da empresa: informações por categoria e documentos PDF/TXT/MD/CSV (texto extraído, isolado por empresa) | ✅ |
+| Agente: tom, objetivo, perguntas de qualificação, regras, transferência para vendedor, horário de atendimento e mensagem fora do horário | ✅ |
+| Resposta automática pela fila (`ai.reply`, agrupa mensagens seguidas em 5 s), só com base no contexto cadastrado; transfere quando não sabe | ✅ |
+| Testar o agente na tela (nada é enviado pelo WhatsApp) | ✅ |
+| Sem provedor configurado: aviso claro, teste desabilitado, conversas ficam com os vendedores | ✅ |
+| Pesquisa de empresas gratuita pelo OpenStreetMap (padrão sem chave do Google) | ✅ |
+| `CONFIGURAR_IA.bat` e `CONFIGURAR_PESQUISA.bat` (Ollama em perfil opcional do Docker) | ✅ preparado (não executado em Windows) |
+
+## Fase 09 — Dashboard, metas e relatórios — ✅ concluída (27/11/2026)
+| Item | Status |
+|---|---|
+| Dashboard com filtros (período, campanha, vendedor, origem), 8 indicadores, gráficos diários, funil, vendas por vendedor, resultados por campanha e metas | ✅ |
+| Vendedor vê somente os próprios números (forçado no servidor, mesmo alterando o endereço) | ✅ |
+| Relatórios: prospecção/captação, campanhas, mensagens/respostas, atendimento e desempenho (só administrador), vendas, conversão/perdas, metas | ✅ |
+| Exportação CSV (Excel PT-BR, proteção contra fórmulas), Excel .xlsx (números somáveis) e PDF (versão para impressão → "Salvar como PDF") | ✅ (exige a funcionalidade "Exportação de dados") |
+
 ## Instalação local gratuita (Windows + Docker) — ✅ preparada (26/11/2026)
 | Item | Status | Evidência |
 |---|---|---|
@@ -151,11 +171,12 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 ## Próximas fases
 | Módulo | Status |
 |---|---|
-| Contexto + Chatbot IA | 🔶 `ai_settings` criado por empresa — Fase 08 |
-| Dashboard completo, metas, relatórios, exportação | ⏳ Fase 09 |
+| Testes integrados finais, revisão de segurança, desempenho, preparação comercial | ⏭ Fase 10 |
 
 ## Decisões registradas
-- WhatsApp: somente integração oficial (Meta). Número pessoal não tem via oficial; orientação é migrar para WhatsApp Business e usar coexistência. Integrações não oficiais exigem autorização expressa.
+- IA e pesquisa: opções gratuitas por padrão para testes (Gemini/Groq/Ollama; OpenStreetMap). Serviços pagos só com autorização.
+- WhatsApp: modalidade ativa = Evolution API (QR Code, não oficial, autorizada pela cliente); Meta oficial mantida como alternativa.
+- (histórico) WhatsApp: somente integração oficial (Meta). Número pessoal não tem via oficial; orientação é migrar para WhatsApp Business e usar coexistência. Integrações não oficiais exigem autorização expressa.
 - Fila de processamento roda dentro do servidor web (instrumentation.ts) e pode rodar separada (`npm run worker`); seguro com vários processos (SKIP LOCKED).
 - IA: SDK oficial da Anthropic, modelo padrão `claude-opus-5-5` (variável AI_MODEL), esforço baixo para mensagens curtas, fallback automático no servidor habilitado (se o modelo recusar, outro responde).
 - Planilhas lidas no navegador com SheetJS 0.18.5 (a CDN oficial com versões novas é inacessível neste ambiente e a versão do npm tem vulnerabilidades ao ler arquivos maliciosos). Assim o servidor nunca processa o arquivo bruto: recebe só valores mapeados (limite 20.000 linhas) e normaliza/valida novamente. Reavaliar ao publicar: trocar para a versão da CDN do SheetJS.

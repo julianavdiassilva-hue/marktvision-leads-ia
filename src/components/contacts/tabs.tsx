@@ -10,7 +10,7 @@ export function ContactsTabs({ active, ctx }: { active: Key; ctx: AuthContext })
     f("contacts") && { key: "contatos", href: "/contatos", label: "Contatos" },
     f("contact_lists") && { key: "listas", href: "/contatos/listas", label: "Listas" },
     f("spreadsheet_import") && { key: "importar", href: "/contatos/importar", label: "Importar planilha" },
-    f("google_search") && { key: "google", href: "/contatos/google", label: "Pesquisa Google" },
+    f("google_search") && { key: "google", href: "/contatos/google", label: "Pesquisar empresas" },
   ].filter(Boolean) as { key: Key; href: string; label: string }[];
   return (
     <nav className="mb-6 flex gap-1 overflow-x-auto border-b border-line">

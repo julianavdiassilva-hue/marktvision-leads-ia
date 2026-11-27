@@ -3,7 +3,10 @@
 Nenhuma integração é simulada. Sem credencial, o módulo informa que a configuração está pendente.
 Todas as chaves ficam no `.env` do servidor (nunca no frontend). Tokens por empresa (WhatsApp) ficam criptografados no banco com `ENCRYPTION_KEY`.
 
-## 1. Google Places API (New) — Fase 03
+## 1. Pesquisa de empresas — Fase 03
+**Padrão gratuito: OpenStreetMap (Nominatim)** — sem cadastro e sem custo; traz nome, endereço e site, mas poucas empresas têm telefone. Uso respeitoso (1 consulta por segundo). `SEARCH_PROVIDER=osm`.
+
+**Google Places API (New)** — mais completo (telefone, avaliação). Custos conferidos em 27/11/2026 na tabela oficial do Google Maps Platform: a pesquisa com telefone usa o SKU *Text Search Enterprise* — **1.000 pesquisas grátis por mês** (cada pesquisa traz até 20 empresas); acima disso, cerca de **US$ 35 por 1.000**. Exige conta no Google Cloud **com faturamento (cartão)**. Não ativar sem autorização. Recomenda-se definir cota diária no Console para nunca passar da franquia.
 1. https://console.cloud.google.com → crie/seleciona um projeto e ative o **faturamento**.
 2. APIs e serviços → Biblioteca → ative **Places API (New)**.
 3. Credenciais → Criar credencial → Chave de API. Restrinja a chave à "Places API (New)" (e, em produção, ao IP do servidor).
@@ -65,9 +68,14 @@ Troca o código (validade 5 min) pelo token da empresa → inscreve o app no WAB
 ### Arquitetura de provedores
 `src/server/integrations/whatsapp/provider.ts` define o contrato (`verify`, `sendText`, `sendTemplate`, `listTemplates`, onboarding). A Meta é o provedor `meta_cloud`. Outros provedores **autorizados** podem ser adicionados implementando o contrato, sem alterar campanhas/conversas.
 
-## 3. Inteligência artificial (Anthropic Claude) — Fases 04 e 08
-1. https://console.anthropic.com → API Keys → criar chave.
-2. `.env`: `ANTHROPIC_API_KEY=...` e `AI_MODEL` (padrão `claude-opus-5-5`).
+## 3. Inteligência artificial — Fases 04 e 08
+Configurar pelo `CONFIGURAR_IA.bat` (grava no `.env`, nunca no código). Opções (conferidas em 27/11/2026; limites podem mudar — confira a página oficial):
+| Opção | Custo | Observações |
+|---|---|---|
+| **Google Gemini** (aistudio.google.com, modelo `gemini-2.5-flash`) | Franquia gratuita com limites por minuto/dia, sem cartão | Na franquia gratuita o Google **pode usar os dados enviados para melhorar produtos**. Não vincular faturamento ao projeto (vincular faz todo o uso ser cobrado). |
+| **Groq** (console.groq.com, `llama-3.3-70b-versatile`) | Franquia gratuita sem cartão (cerca de 1.000 pedidos/dia nesse modelo) | Rápido; bom para testes. |
+| **Ollama local** (`qwen2.5:3b`) | Gratuito, roda no próprio computador | Privado; mais lento; ~2 GB de download; exige memória livre. |
+| **Anthropic Claude** (`claude-opus-5-5`) | **Pago por uso** | Melhor qualidade; só com autorização. |
 A IA responde apenas com base no contexto cadastrado da própria empresa.
 
 ## 4. Banco de dados

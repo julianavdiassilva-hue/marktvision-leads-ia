@@ -12,8 +12,8 @@ import type { PlaceResult } from "@/server/integrations/google-places";
 type Result = PlaceResult & { phoneE164: string | null; alreadyInBase: boolean };
 export type SavedPlaces = { created: number; updated: number; listId: string | null; contactIds: string[] };
 
-export function GoogleSearch({ configured, lists, team, canLists, canAssign, onSaved }: {
-  configured: boolean; lists: { id: string; name: string }[]; team: { id: string; name: string }[]; canLists: boolean; canAssign: boolean;
+export function GoogleSearch({ configured, provider = "google", lists, team, canLists, canAssign, onSaved }: {
+  configured: boolean; provider?: "google" | "osm"; lists: { id: string; name: string }[]; team: { id: string; name: string }[]; canLists: boolean; canAssign: boolean;
   onSaved?: (r: SavedPlaces) => void;
 }) {
   const [form, setForm] = useState({ keyword: "", city: "", state: "", neighborhood: "", region: "" });
@@ -53,7 +53,8 @@ export function GoogleSearch({ configured, lists, team, canLists, canAssign, onS
 
   return (
     <div>
-      {!configured && <div className="mb-5"><Alert tone="amber">A pesquisa no Google ainda não foi ativada nesta instalação: falta a chave <b>GOOGLE_PLACES_API_KEY</b>. Ao pesquisar, você verá esta mesma orientação — nenhum resultado é inventado.</Alert></div>}
+      {provider === "osm" ? <div className="mb-5"><Alert tone="amber">Fonte: <b>OpenStreetMap</b> (gratuita). Traz nomes, endereços e sites de empresas cadastradas no mapa colaborativo, mas <b>poucas têm telefone</b>. Com a chave do Google (GOOGLE_PLACES_API_KEY), a pesquisa passa a usar o Google automaticamente.</Alert></div>
+        : !configured && <div className="mb-5"><Alert tone="amber">A pesquisa no Google ainda não foi ativada nesta instalação: falta a chave <b>GOOGLE_PLACES_API_KEY</b>. Ao pesquisar, você verá esta mesma orientação — nenhum resultado é inventado.</Alert></div>}
       <form onSubmit={(e) => { e.preventDefault(); search(); }} className="panel grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-[2fr_1.2fr_0.6fr_1fr_auto] lg:items-end">
         <div><label className="label" htmlFor="g-keyword">Segmento ou palavra-chave</label><input id="g-keyword" className="input" placeholder="Ex.: clínicas odontológicas" value={form.keyword} onChange={(e) => setForm({ ...form, keyword: e.target.value })} /></div>
         <div><label className="label" htmlFor="g-city">Cidade</label><input id="g-city" className="input" placeholder="Ex.: Belém" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
@@ -76,7 +77,7 @@ export function GoogleSearch({ configured, lists, team, canLists, canAssign, onS
               <thead><tr>
                 <th className="w-10"><input type="checkbox" aria-label="Selecionar todos" className="h-4 w-4 accent-[#008C48]" checked={visible.length > 0 && visible.every((r) => sel.has(r.placeId))}
                   onChange={(e) => setSel(e.target.checked ? new Set(visible.map((r) => r.placeId)) : new Set())} /></th>
-                <th>Empresa</th><th>Telefone</th><th>Endereço</th><th>Categoria</th><th>Avaliação</th><th /></tr></thead>
+                <th>Empresa</th><th>Telefone</th><th>Endereço</th><th>Categoria</th><th>{provider === "osm" ? "" : "Avaliação"}</th><th /></tr></thead>
               <tbody>{visible.map((r) => (
                 <tr key={r.placeId} className={clsx(sel.has(r.placeId) && "[&>td]:bg-brand-50")}>
                   <td><input type="checkbox" aria-label={`Selecionar ${r.name}`} className="h-4 w-4 accent-[#008C48]" checked={sel.has(r.placeId)}

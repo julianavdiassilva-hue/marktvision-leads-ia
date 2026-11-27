@@ -1,6 +1,7 @@
 import type { AuthContext } from "../auth/core";
 import { hasFeature, isCompanyAdmin } from "../guards";
 import { isGoogleConfigured } from "../integrations/google-places";
+import { searchProvider } from "./prospecting";
 import { listOptions } from "./lists";
 import { teamOptions } from "./contacts";
 import { listScripts } from "./scripts";
@@ -25,7 +26,7 @@ export async function wizardData(ctx: AuthContext, campaignId?: string) {
     };
   }
   const perms: WizardPerms = {
-    google: hasFeature(ctx, "google_search"), googleConfigured: isGoogleConfigured(), import: hasFeature(ctx, "spreadsheet_import"),
+    google: hasFeature(ctx, "google_search"), googleConfigured: isGoogleConfigured() || searchProvider() === "osm", searchProvider: searchProvider(), import: hasFeature(ctx, "spreadsheet_import"),
     lists: hasFeature(ctx, "contact_lists"), aiMessages: hasFeature(ctx, "ai_messages"), broadcasts: hasFeature(ctx, "broadcasts"), canAssign: isCompanyAdmin(ctx),
   };
   return { lists, team, scripts, connections, templates, initial, perms, companyName: ctx.company!.name };

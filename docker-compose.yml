@@ -68,7 +68,11 @@ services:
       BACKUP_DIR: /backups
       GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      AI_MODEL: ${AI_MODEL:-claude-opus-5-5}
+      AI_PROVIDER: ${AI_PROVIDER:-}
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+      SEARCH_PROVIDER: ${SEARCH_PROVIDER:-}
       META_APP_ID: ${META_APP_ID:-}
       META_APP_SECRET: ${META_APP_SECRET:-}
       META_EMBEDDED_SIGNUP_CONFIG_ID: ${META_EMBEDDED_SIGNUP_CONFIG_ID:-}
@@ -97,6 +101,15 @@ services:
       postgres: { condition: service_healthy }
     logging: *logging
 
+  # IA local e gratuita (opcional): modelos rodam no próprio computador (exige ~8 GB de RAM livre)
+  ollama:
+    image: ollama/ollama:0.40.18
+    profiles: ["ia-local"]
+    restart: unless-stopped
+    volumes:
+      - ollama_models:/root/.ollama
+    logging: *logging
+
   # Acesso pela internet SEM domínio: endereço https://xxxx.trycloudflare.com (muda a cada reinício)
   tunel:
     image: cloudflare/cloudflared:2026.11.2
@@ -120,3 +133,4 @@ services:
 volumes:
   pgdata:
   evolution_sessions:
+  ollama_models:

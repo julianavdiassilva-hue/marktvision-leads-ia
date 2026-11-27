@@ -25,7 +25,7 @@ export type WizardInitial = {
   templateId: string | null; templateParams: string[];
 };
 type Template = { id: string; connection_id: string; name: string; language: string; body: string; params: number };
-export type WizardPerms = { google: boolean; googleConfigured: boolean; import: boolean; lists: boolean; aiMessages: boolean; broadcasts: boolean; canAssign: boolean };
+export type WizardPerms = { google: boolean; googleConfigured: boolean; searchProvider?: "google" | "osm"; import: boolean; lists: boolean; aiMessages: boolean; broadcasts: boolean; canAssign: boolean };
 
 const STEPS = ["Nome", "Origem dos contatos", "Seleção", "Script", "WhatsApp", "Atendimento", "Execução"];
 
@@ -123,7 +123,7 @@ export function CampaignWizard({ initial, lists, team, scripts: initialScripts, 
         {step === 1 && (
           <StepBox title="2. Origem dos contatos" desc="Encontre ou traga contatos sem sair desta tela. Todos entram na base central, sem duplicar.">
             <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {([["google", "Pesquisar no Google", Search, perms.google], ["import", "Anexar planilha", FileSpreadsheet, perms.import], ["list", "Lista existente", ListChecks, perms.lists], ["manual", "Adicionar manualmente", UserPlus, true]] as const).map(([k, l, Icon, ok]) => (
+              {([["google", perms.searchProvider === "osm" ? "Pesquisar empresas (mapa)" : "Pesquisar no Google", Search, perms.google], ["import", "Anexar planilha", FileSpreadsheet, perms.import], ["list", "Lista existente", ListChecks, perms.lists], ["manual", "Adicionar manualmente", UserPlus, true]] as const).map(([k, l, Icon, ok]) => (
                 <button key={k} type="button" disabled={!ok} onClick={() => setOrigin(k)} className={clsx("flex items-center gap-3 rounded-xl border-2 px-4 py-4 text-left text-[15.5px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-40",
                   origin === k ? "border-brand bg-brand-50 text-brand-dark" : "border-line hover:border-brand/40")} title={ok ? undefined : "Funcionalidade não liberada"}>
                   <Icon className="h-6 w-6 shrink-0 text-brand" />{l}
@@ -131,7 +131,7 @@ export function CampaignWizard({ initial, lists, team, scripts: initialScripts, 
               ))}
             </div>
             {origin === "google" && perms.google && (
-              <GoogleSearch configured={perms.googleConfigured} lists={lists} team={team} canLists={perms.lists} canAssign={perms.canAssign}
+              <GoogleSearch configured={perms.googleConfigured} provider={perms.searchProvider} lists={lists} team={team} canLists={perms.lists} canAssign={perms.canAssign}
                 onSaved={(r) => { if (r.listId) setListId(r.listId); loadAndAdd({ ids: r.contactIds }); }} />
             )}
             {origin === "import" && perms.import && (

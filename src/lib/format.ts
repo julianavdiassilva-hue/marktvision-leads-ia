@@ -7,3 +7,5 @@ export const fmtDateTime = (d: Date | string | null | undefined) =>
 export const fmtDate = (d: Date | string | null | undefined) =>
   d ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "America/Belem" }).format(new Date(d)) : "—";
 export const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 1000) / 10 : 0);
+/** Percentual formatado em pt-BR (16,7). */
+export const pctBr = (a: number, b: number) => String(pct(a, b)).replace(".", ",");

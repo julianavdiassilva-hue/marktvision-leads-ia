@@ -51,6 +51,7 @@ function Perfis {
   $e = Ler-Env; $p = @()
   if ($e["ACESSO_REMOTO"] -eq "temporario") { $p += @("--profile", "remoto") }
   if ($e["ACESSO_REMOTO"] -eq "dominio") { $p += @("--profile", "dominio") }
+  if ($e["AI_LOCAL"] -eq "sim") { $p += @("--profile", "ia-local") }
   return $p
 }
 function Compose { param([Parameter(ValueFromRemainingArguments = $true)]$Args2) $p = Perfis; & docker compose @p @Args2; if ($LASTEXITCODE -ne 0) { throw "Falha no comando: docker compose $Args2" } }
@@ -101,7 +102,7 @@ function Criar-Env {
     "# Marktvision Leads IA - configuracao local. NAO compartilhe este arquivo.",
     "DB_OWNER_PASSWORD=$(Segredo 24)", "DB_APP_PASSWORD=$(Segredo 24)", "EVOLUTION_API_KEY=$(Segredo 24)", "ENCRYPTION_KEY=$(Segredo 32)",
     "APP_PORT=3000", "APP_URL=http://localhost:3000", "ACESSO_REMOTO=desativado", "ENDERECO_FIXO=", "CLOUDFLARE_TUNNEL_TOKEN=",
-    "BACKUP_KEEP_DAYS=14", "GOOGLE_PLACES_API_KEY=", "ANTHROPIC_API_KEY=", "AI_MODEL=claude-opus-5-5",
+    "BACKUP_KEEP_DAYS=14", "GOOGLE_PLACES_API_KEY=", "SEARCH_PROVIDER=osm", "ANTHROPIC_API_KEY=", "AI_PROVIDER=", "AI_BASE_URL=", "AI_API_KEY=", "AI_MODEL=", "AI_LOCAL=nao",
     "META_APP_ID=", "META_APP_SECRET=", "META_EMBEDDED_SIGNUP_CONFIG_ID=", "META_WEBHOOK_VERIFY_TOKEN=$(Segredo 16)")
   Set-Content -Path $EnvFile -Value $linhas -Encoding ASCII
   # somente o usuario atual pode ler o arquivo de segredos
@@ -259,6 +260,46 @@ function Acesso-Remoto {
   Mostrar-Enderecos
 }
 
+function Configurar-IA {
+  Titulo "Inteligencia artificial (chatbot, mensagens e sugestoes)"
+  Write-Host "  [1] Google Gemini - franquia GRATUITA com limites (chave em aistudio.google.com)"
+  Write-Host "      Atencao: na franquia gratuita o Google pode usar os dados enviados para melhorar produtos."
+  Write-Host "  [2] Groq - franquia GRATUITA com limites (chave em console.groq.com)"
+  Write-Host "  [3] Ollama - IA LOCAL e gratuita, roda neste computador (privado; mais lento; ~2 GB de download)"
+  Write-Host "  [4] Anthropic Claude - PAGO por uso (chave em console.anthropic.com)"
+  Write-Host "  [5] Desativar a IA"
+  $o = Read-Host "  Escolha"
+  Gravar-EnvValor "AI_LOCAL" "nao"
+  switch ($o) {
+    "1" { $k = Read-Host "  Cole a chave da API do Gemini"; $m = Read-Host "  Modelo (Enter para gemini-2.5-flash)"; if (-not $m) { $m = "gemini-2.5-flash" }
+          Gravar-EnvValor "AI_PROVIDER" "openai_compat"; Gravar-EnvValor "AI_BASE_URL" "https://generativelanguage.googleapis.com/v1beta/openai"; Gravar-EnvValor "AI_API_KEY" $k; Gravar-EnvValor "AI_MODEL" $m }
+    "2" { $k = Read-Host "  Cole a chave da API do Groq"; $m = Read-Host "  Modelo (Enter para llama-3.3-70b-versatile)"; if (-not $m) { $m = "llama-3.3-70b-versatile" }
+          Gravar-EnvValor "AI_PROVIDER" "openai_compat"; Gravar-EnvValor "AI_BASE_URL" "https://api.groq.com/openai/v1"; Gravar-EnvValor "AI_API_KEY" $k; Gravar-EnvValor "AI_MODEL" $m }
+    "3" { $m = Read-Host "  Modelo (Enter para qwen2.5:3b)"; if (-not $m) { $m = "qwen2.5:3b" }
+          Gravar-EnvValor "AI_LOCAL" "sim"; Gravar-EnvValor "AI_PROVIDER" "openai_compat"; Gravar-EnvValor "AI_BASE_URL" "http://ollama:11434/v1"; Gravar-EnvValor "AI_API_KEY" ""; Gravar-EnvValor "AI_MODEL" $m
+          Garantir-Docker; Compose up -d ollama
+          Info "Baixando o modelo $m (pode levar varios minutos)..."
+          & docker compose --profile ia-local exec -T ollama ollama pull $m
+          if ($LASTEXITCODE -ne 0) { throw "Nao foi possivel baixar o modelo $m." } }
+    "4" { $k = Read-Host "  Cole a chave da API da Anthropic (servico PAGO)"; Gravar-EnvValor "AI_PROVIDER" "anthropic"; Gravar-EnvValor "ANTHROPIC_API_KEY" $k; Gravar-EnvValor "AI_MODEL" "claude-opus-5-5" }
+    "5" { Gravar-EnvValor "AI_PROVIDER" ""; Gravar-EnvValor "AI_BASE_URL" ""; Gravar-EnvValor "AI_API_KEY" ""; Gravar-EnvValor "ANTHROPIC_API_KEY" "" }
+    default { return }
+  }
+  Garantir-Docker; Compose up -d; Aguardar-App
+  Info "Configuracao de IA aplicada. Teste em Chatbot IA > Testar o agente."
+}
+
+function Configurar-Pesquisa {
+  Titulo "Pesquisa de empresas"
+  Write-Host "  [1] OpenStreetMap - GRATUITO, sem cadastro (poucas empresas com telefone)"
+  Write-Host "  [2] Google Places - mais completo; exige conta Google Cloud com faturamento (cartao). Consulte a franquia gratuita e os precos antes."
+  $o = Read-Host "  Escolha"
+  if ($o -eq "1") { Gravar-EnvValor "SEARCH_PROVIDER" "osm" }
+  elseif ($o -eq "2") { $k = Read-Host "  Cole a chave GOOGLE_PLACES_API_KEY"; Gravar-EnvValor "GOOGLE_PLACES_API_KEY" $k; Gravar-EnvValor "SEARCH_PROVIDER" "google" }
+  else { return }
+  Garantir-Docker; Compose up -d; Aguardar-App; Info "Pesquisa configurada."
+}
+
 function Status {
   Garantir-Docker
   Titulo "Servicos"
@@ -283,6 +324,8 @@ try {
     "admin"      { Garantir-Docker; Criar-Admin }
     "remoto"     { Acesso-Remoto }
     "status"     { Status }
+    "ia"         { Configurar-IA }
+    "pesquisa"   { Configurar-Pesquisa }
     "autoinicio" { $r = Read-Host "  Iniciar automaticamente ao ligar o computador? (S/N)"; Atalho-Inicializacao ($r -match '^[sS]') }
     default      { throw "Acao desconhecida: $Acao" }
   }

@@ -7,6 +7,14 @@ import { assertCompany, assertFeature, isCompanyAdmin, scopeOf } from "../guards
 import { companyLimits } from "../permissions";
 import { recordEvent } from "../events";
 import { searchPlaces, type PlaceResult } from "../integrations/google-places";
+import { searchOsm } from "../integrations/osm";
+
+/** Fonte da pesquisa: Google (com chave) ou OpenStreetMap (gratuito). SEARCH_PROVIDER força uma delas. */
+export function searchProvider(): "google" | "osm" {
+  const p = process.env.SEARCH_PROVIDER;
+  if (p === "google" || p === "osm") return p;
+  return process.env.GOOGLE_PLACES_API_KEY ? "google" : "osm";
+}
 import { upsertContacts, type NormalizedContact } from "./contacts";
 import { optionalText, parse } from "../validation";
 import { normalizePhone } from "@/lib/phone";
@@ -39,7 +47,9 @@ export async function searchCompanies(ctx: AuthContext, raw: SearchInput) {
     if (limits.max_google_searches_month != null && Number(used?.value ?? 0) >= limits.max_google_searches_month)
       throw new AppError("LIMIT", `Limite de ${limits.max_google_searches_month} pesquisas no Google neste mês atingido.`);
   });
-  const { places, nextPageToken } = await searchPlaces(query, input.pageToken);
+  const provider = searchProvider();
+  const location = [input.neighborhood, input.region, input.city, input.state].filter(Boolean).join(", ");
+  const { places, nextPageToken } = provider === "google" ? await searchPlaces(query, input.pageToken) : await searchOsm(input.keyword, location || "Brasil", input.pageToken);
   return withScope(scopeOf(ctx), async (db) => {
     await db.exec(`insert into usage_counters (company_id, metric, period, value) values ($1,'google_searches',$2,1)
                    on conflict (company_id, metric, period) do update set value = usage_counters.value + 1`, [companyId, monthStart()]);
@@ -49,7 +59,7 @@ export async function searchCompanies(ctx: AuthContext, raw: SearchInput) {
       [companyId, places.map((p) => p.placeId), phones]);
     const known = new Set(existing.flatMap((e) => [e.google_place_id, e.phone_e164]).filter(Boolean));
     return {
-      query, nextPageToken,
+      query, nextPageToken, provider,
       results: places.map((p) => ({ ...p, phoneE164: normalizePhone(p.phone), alreadyInBase: known.has(p.placeId) || known.has(normalizePhone(p.phone) ?? "-") })),
     };
   });
@@ -59,12 +69,12 @@ export function placeToContact(p: PlaceResult, query: string): NormalizedContact
   return {
     name: p.name, organization: p.name, phone_e164: normalizePhone(p.phone), address: p.address, website: p.website,
     category: p.category, rating: p.rating, city: p.city, state: p.state, neighborhood: p.neighborhood, google_place_id: p.placeId,
-    source_detail: { query, maps_url: p.mapsUrl, rating_count: p.ratingCount },
+    source_detail: { query, maps_url: p.mapsUrl, rating_count: p.ratingCount, fonte: p.placeId.startsWith("osm:") ? "OpenStreetMap" : "Google" },
   };
 }
 
 const placeSchema = z.object({
-  placeId: z.string().min(1).max(300), name: z.string().max(300), phone: z.string().max(40).nullable(), address: z.string().max(500).nullable(),
+  placeId: z.string().min(1).max(300), name: z.string().max(300), phone: z.string().max(60).nullable(), address: z.string().max(500).nullable(),
   website: z.string().max(500).nullable(), category: z.string().max(200).nullable(), rating: z.number().min(0).max(5).nullable(),
   ratingCount: z.number().nullable(), city: z.string().max(120).nullable(), state: z.string().max(60).nullable(),
   neighborhood: z.string().max(120).nullable(), mapsUrl: z.string().max(1000).nullable(),

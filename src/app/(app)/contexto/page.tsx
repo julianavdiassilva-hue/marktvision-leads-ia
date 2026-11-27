@@ -1,13 +1,18 @@
 import { requireModulePage } from "@/server/auth/next";
-import { ModulePending } from "@/components/module-pending";
+import { isCompanyAdmin } from "@/server/guards";
+import { KNOWLEDGE_CATEGORIES, listKnowledge } from "@/server/services/knowledge";
+import { PageHeader } from "@/components/ui";
+import { KnowledgeManager } from "@/components/ai/knowledge";
 
 export const metadata = { title: "Contexto da empresa" };
 
-export default async function Page() {
-  await requireModulePage(["ai_chatbot"], { adminOnly: true });
+export default async function ContextPage() {
+  const ctx = await requireModulePage(["ai_chatbot"], { adminOnly: true });
+  const k = await listKnowledge(ctx);
   return (
-    <ModulePending title="Contexto da empresa" phase={8}
-      description="Base de conhecimento da empresa: produtos, serviços, preços, horários, regras e documentos."
-      connections={['Isolada por empresa (RLS no banco)', 'Utilizada pelo Chatbot IA e pelas mensagens geradas com IA']} />
+    <>
+      <PageHeader title="Contexto da empresa" description={`Tudo o que o agente de IA sabe sobre ${ctx.company!.name}. Informações de uma empresa nunca são usadas no atendimento de outra.`} />
+      <KnowledgeManager entries={k.entries} documents={k.documents} categories={KNOWLEDGE_CATEGORIES} canEdit={isCompanyAdmin(ctx)} />
+    </>
   );
 }

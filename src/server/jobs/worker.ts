@@ -13,6 +13,7 @@ import { metaOnboarding } from "../integrations/whatsapp/meta";
 import { processWhatsAppWebhook } from "../webhooks/whatsapp";
 import { processEvolutionWebhook } from "../webhooks/evolution";
 import { renderTemplate } from "@/lib/template";
+import { aiReplyJob } from "../services/ai-agent";
 
 type Job = { id: number; company_id: string | null; type: string; payload: Record<string, unknown>; attempts: number; max_attempts: number };
 type Result = { rescheduleSeconds?: number } | void;
@@ -167,6 +168,7 @@ export const HANDLERS: Record<string, (j: Job) => Promise<Result>> = {
   "campaign.start_scheduled": startScheduled,
   "whatsapp.send_text": sendText,
   "whatsapp.coexistence_sync": coexistenceSync,
+  "ai.reply": async (job) => { await aiReplyJob(String(job.payload.conversationId)); },
 };
 
 async function reprocessWebhooks() {

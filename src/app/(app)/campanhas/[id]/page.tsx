@@ -6,7 +6,7 @@ import { getCampaign } from "@/server/services/campaigns";
 import { Badge, Empty, Panel } from "@/components/ui";
 import { CampaignActions, CampaignStatus, ProgressBar } from "@/components/campaigns/campaign-list";
 import { formatPhone } from "@/lib/phone";
-import { fmtDateTime, fmtInt, fmtMoney, pct } from "@/lib/format";
+import { fmtDateTime, fmtInt, fmtMoney, pctBr as pct } from "@/lib/format";
 
 export const metadata = { title: "Resultados da campanha" };
 

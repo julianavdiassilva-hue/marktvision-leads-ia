@@ -5,7 +5,7 @@
  */
 import "dotenv/config";
 import { spawn } from "node:child_process";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
 import { resetDatabase } from "../../scripts/reset";
 import { seedPlatformAdmin } from "../../scripts/seed";
@@ -39,7 +39,7 @@ async function main() {
   await resetDatabase(process.env.TEST_DATABASE_OWNER_URL, false);
   await seedPlatformAdmin(process.env.TEST_DATABASE_OWNER_URL, { name: "Administrador Marktvision", username: "admin", password: "admin-e2e-2026" });
   const server = spawn("npx", ["next", "start", "-p", String(PORT)], {
-    env: { ...process.env, DATABASE_URL: process.env.TEST_DATABASE_URL }, stdio: "ignore", detached: true,
+    env: { ...process.env, DATABASE_URL: process.env.TEST_DATABASE_URL, SEARCH_PROVIDER: "google", GOOGLE_PLACES_API_KEY: "" }, stdio: "ignore", detached: true,
   });
   try {
     for (let i = 0; i < 60; i++) { try { if ((await fetch(`${BASE}/api/health`)).ok) break; } catch {} await new Promise((r) => setTimeout(r, 500)); }
@@ -314,7 +314,7 @@ async function main() {
       await page.goto(`${BASE}/contatos?q=Açaí`);
       await page.getByRole("link", { name: "João Açaí" }).waitFor();
     });
-    await step("pesquisa no Google sem chave: orientação clara, nenhum resultado inventado", async () => {
+    await step("pesquisa no Google (forçada) sem chave: orientação clara, nenhum resultado inventado", async () => {
       await page.goto(`${BASE}/contatos/google`);
       await page.getByText(/ainda não foi ativada/).waitFor();
       await page.fill("#g-keyword", "clínicas odontológicas"); await page.fill("#g-city", "Belém");
@@ -531,6 +531,74 @@ async function main() {
       await page.getByRole("dialog").waitFor({ state: "detached" });
       await page.reload();
       assert((await page.locator("tbody tr").count()) === 0 || await page.getByText("Nenhum contato encontrado").count() > 0, "ainda há contatos sem responsável");
+    });
+
+    console.log("Fase 08 — Chatbot IA e contexto da empresa");
+    await step("admin geral libera Chatbot IA e Exportação de dados", async () => {
+      await login(page, "admin", "admin-e2e-2026");
+      await page.goto(`${BASE}/admin/empresas`);
+      await page.getByRole("link", { name: "Refrigeração Pará" }).click();
+      for (const name of ["Chatbot IA", "Exportação de dados"]) {
+        const sw = page.getByRole("switch", { name, exact: true });
+        if ((await sw.getAttribute("aria-checked")) !== "true") { await sw.click(); await page.waitForFunction((n) => document.querySelector(`[role=switch][aria-label="${n}"]`)?.getAttribute("aria-checked") === "true", name); }
+      }
+      await page.waitForTimeout(600);
+    });
+    await step("contexto da empresa: cadastrar informação usada pelo agente", async () => {
+      await login(page, "paula.ref", "paulasenha1");
+      await page.goto(`${BASE}/contexto`);
+      await page.getByRole("button", { name: "Nova informação" }).click();
+      await page.fill("#k-title", "Instalação de ar split");
+      await page.fill("#k-content", "Instalamos ar split de 9 a 24 mil BTUs em Belém. Garantia de 90 dias.");
+      await page.getByRole("dialog").getByRole("button", { name: "Salvar" }).click();
+      await page.getByText("Instalação de ar split").waitFor();
+      await page.screenshot({ path: `${SHOTS}/20-contexto.png`, fullPage: true });
+    });
+    await step("chatbot sem provedor de IA: aviso claro e teste desabilitado (nada inventado)", async () => {
+      await page.goto(`${BASE}/chatbot`);
+      await page.getByText(/Nenhum provedor de IA configurado/).waitFor();
+      assert(await page.getByLabel("Mensagem de teste").isDisabled(), "teste deveria estar desabilitado sem provedor");
+      await page.getByRole("button", { name: "Salvar configurações" }).click();
+      await page.getByRole("status").waitFor();
+      await page.screenshot({ path: `${SHOTS}/21-chatbot.png`, fullPage: true });
+    });
+    await step("vendedor não acessa Chatbot IA nem Contexto", async () => {
+      await login(page, "sara.ref", "sarasenha1");
+      for (const path of ["/chatbot", "/contexto"]) { await page.goto(`${BASE}${path}`); await page.waitForURL(/acesso-negado/); }
+    });
+
+    console.log("Fase 09 — Dashboard, metas e relatórios");
+    await step("dashboard com filtros e indicadores reais", async () => {
+      await login(page, "paula.ref", "paulasenha1");
+      await page.goto(`${BASE}/dashboard`);
+      await page.getByText("R$ 2.400,00").first().waitFor();
+      await page.screenshot({ path: `${SHOTS}/22-dashboard.png`, fullPage: true });
+      await page.selectOption("#vendedor", { label: "Rui Vendas" });
+      await page.getByRole("button", { name: "Aplicar" }).click();
+      await page.waitForURL(/vendedor=/);
+      assert(await page.getByText("R$ 2.400,00").count() === 0, "filtro por vendedor não aplicado");
+    });
+    await step("relatório de vendas com exportação CSV, Excel e PDF", async () => {
+      await page.goto(`${BASE}/relatorios?tipo=vendas`);
+      await page.getByRole("cell", { name: "R$ 2.400,00" }).waitFor();
+      await page.screenshot({ path: `${SHOTS}/23-relatorios.png`, fullPage: true });
+      const [csv] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "CSV" }).click()]);
+      const text = readFileSync((await csv.path())!, "utf8");
+      assert(text.includes("Carlos Comprador") && /R\$\s?2\.400,00/.test(text), "CSV sem a venda");
+      const [xlsx] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Excel" }).click()]);
+      assert(xlsx.suggestedFilename().endsWith(".xlsx"), "arquivo Excel não gerado");
+      const print = await browser.newPage();
+      await print.addInitScript(() => { window.print = () => {}; });
+      await print.context().addCookies(await page.context().cookies());
+      await print.goto(`${BASE}/imprimir/relatorio?tipo=vendas`);
+      await print.getByRole("cell", { name: "R$ 2.400,00" }).waitFor();
+      await print.close();
+    });
+    await step("vendedor vê apenas os próprios números nos relatórios", async () => {
+      await login(page, "rui.ref", "ruisenha12");
+      await page.goto(`${BASE}/relatorios?tipo=vendas`);
+      await page.getByText("Nenhum dado no período").waitFor();
+      assert(await page.getByRole("link", { name: "Atendimento" }).count() === 0, "vendedor não deveria ver relatório de atendimento");
     });
     await browser.close();
   } finally {

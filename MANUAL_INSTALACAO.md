@@ -68,7 +68,11 @@ Somente a tela do sistema fica acessível, sempre com **HTTPS**. Banco de dados,
 `ACESSO_REMOTO.bat` → opção **1**. Aparece um endereço como `https://palavras-aleatorias.trycloudflare.com`.
 - ✅ Gratuito e imediato.
 - ⚠️ **O endereço muda sempre que o sistema reinicia**; é preciso reenviar aos vendedores (está no `ENDERECOS.txt`).
-- ⚠️ A Cloudflare oferece esse modo para testes, sem garantia de disponibilidade.
+- ⚠️ A Cloudflare oferece esse modo para testes, sem garantia de disponibilidade (limite de 200 acessos simultâneos — suficiente para 3 vendedores).
+- 🔒 Mesmo com o endereço público, cada vendedor só entra com login e senha; o sistema bloqueia tentativas repetidas de senha.
+
+### Alternativa gratuita sem endereço público: Tailscale
+Cria uma rede privada entre o computador servidor e os celulares/computadores dos vendedores (o sistema não fica visível na internet). Plano gratuito *Personal*: até 6 usuários. **Atenção:** a Tailscale declara o plano gratuito apenas para uso **não comercial** — serve para os testes; para uso comercial contínuo, o plano pago ou o endereço fixo (Opção B) é o adequado. Cada vendedor instala o aplicativo Tailscale e entra com a conta convidada; o endereço fica `http://NOME-DO-COMPUTADOR:3000`.
 
 ### Opção B — Endereço fixo (recomendado para uso contínuo)
 Exige **um domínio próprio** (ex.: `marktvision.com.br`). Custo: **cerca de R$ 40 por ano** no registro.br (único custo; a Cloudflare e o túnel são gratuitos).
@@ -76,6 +80,19 @@ Exige **um domínio próprio** (ex.: `marktvision.com.br`). Custo: **cerca de R$
 2. Na Cloudflare: **Zero Trust → Networks → Tunnels → Create a tunnel** (tipo *Cloudflared*), dê um nome e copie o **token** exibido.
 3. Em **Public Hostname**, adicione por exemplo `app.seudominio.com.br` apontando para o serviço `http://app:3000`.
 4. Rode `ACESSO_REMOTO.bat` → opção **2**, cole o token e o endereço `https://app.seudominio.com.br`.
+
+---
+
+## 5.1 Inteligência artificial e pesquisa de empresas (opções gratuitas)
+**IA** — rode `CONFIGURAR_IA.bat` e escolha:
+1. **Google Gemini** — gratuito com limites; crie a chave em aistudio.google.com (conta Google, sem cartão). Na franquia gratuita o Google pode usar os textos enviados para melhorar produtos.
+2. **Groq** — gratuito com limites; chave em console.groq.com (sem cartão).
+3. **Ollama** — gratuito e privado, roda no seu computador (mais lento; baixa ~2 GB).
+4. **Anthropic Claude** — pago por uso (somente se você autorizar).
+
+Depois teste em **Chatbot IA → Testar o agente**. Sem IA configurada, o sistema funciona normalmente e as conversas ficam com os vendedores.
+
+**Pesquisa de empresas** — por padrão usa o **OpenStreetMap** (gratuito; poucas empresas têm telefone). O **Google** é mais completo (1.000 pesquisas grátis/mês, depois cerca de US$ 35 por 1.000) mas exige cartão no Google Cloud — só ative com `CONFIGURAR_PESQUISA.bat` se decidir pagar eventual excedente.
 
 ---
 

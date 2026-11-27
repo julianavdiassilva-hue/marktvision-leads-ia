@@ -107,9 +107,17 @@ export async function handleMessages(db: Db, conn: Conn, value: Record<string, u
       await db.exec(`insert into jobs (company_id, type, payload) values ($1,'whatsapp.send_text',$2)`,
         [conn.company_id, { conversationId: convId, body: "Pronto! Você não receberá mais mensagens nossas. Se mudar de ideia, é só nos chamar.", senderType: "system" }]);
     } else {
-      // Chatbot IA (Fase 08) atua quando a conversa estiver com IA ativa
-      const conv = await db.one<{ ai_enabled: boolean }>(`select ai_enabled from conversations where id = $1`, [convId]);
-      if (conv.ai_enabled) await db.exec(`insert into jobs (company_id, type, payload) values ($1,'ai.reply',$2)`, [conn.company_id, { conversationId: convId }]);
+      // Chatbot IA: liga automaticamente conforme o modo da campanha de origem ou a regra de novos contatos
+      const conv = await db.one<{ ai_enabled: boolean; handled_by: string; response_mode: string | null; auto_new: boolean }>(
+        `select cv.ai_enabled, cv.handled_by, ca.response_mode, coalesce(s.auto_reply_new and s.enabled, false) as auto_new
+           from conversations cv left join campaigns ca on ca.id = cv.origin_campaign_id left join ai_settings s on s.company_id = cv.company_id where cv.id = $1`, [convId]);
+      let aiOn = conv.ai_enabled;
+      if (!aiOn && conv.handled_by === "none" && ((conv.response_mode && conv.response_mode !== "human") || (!conv.response_mode && conv.auto_new))) {
+        await db.exec(`update conversations set ai_enabled = true, handled_by = 'ai' where id = $1`, [convId]);
+        aiOn = true;
+      }
+      if (aiOn) await db.exec(`insert into jobs (company_id, type, payload, run_at, dedupe_key) values ($1,'ai.reply',$2, now() + interval '5 seconds', $3) on conflict do nothing`,
+        [conn.company_id, { conversationId: convId }, `ai.reply:${convId}`]);
     }
   }
   for (const s of (value.statuses ?? []) as { id: string; status: string; errors?: { code?: number; title?: string; message?: string }[] }[]) {

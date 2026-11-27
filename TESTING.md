@@ -65,6 +65,13 @@ Webhook autenticado (segredo errado recusado) → conversa com contador no menu 
 Rodízio de leads · negociação com campanha de origem · visibilidade/movimentação por vendedor · ganho/perda exigem dados · venda atualiza contato, campanha, dashboard e indicadores · reabrir desfaz venda · transferência · funil personalizável · metas com realizado · busca/isolamento. E2E: arrastar + seletor de etapa + registrar venda · lista e indicadores · distribuição pela tela de contatos.
 Erros corrigidos: arraste do Kanban não funciona em celular (incluído seletor "Mover para etapa"); mensagens com falha contavam como atendimento; busca por texto sem números casava com qualquer telefone.
 
+## Fase 08 — Integração (9) ✅ · E2E (4) ✅
+Provedor de IA ausente → erro claro sem texto inventado · contexto/documentos isolados por empresa · horário de atendimento · decisão de transferir · resposta automática pela fila. E2E: liberar Chatbot IA, cadastrar contexto, aviso sem provedor com teste desabilitado, vendedor bloqueado.
+
+## Fase 09 — Integração (6) ✅ (total 132/132) · E2E (3) ✅ (total 51/51)
+Dashboard com filtros reais · vendedor restrito aos próprios números · relatórios de vendas/campanhas/perdas/prospecção/metas/mensagens · atendimento só para administrador · isolamento entre empresas · CSV sem injeção de fórmula e XLSX com números. E2E: filtro por vendedor, relatório de vendas com download CSV/Excel e versão PDF, vendedor sem dados de outros.
+Erros corrigidos: consultas com filtros não usados falhavam no PostgreSQL (parâmetros sem tipo) → declaração tipada dos filtros; gráficos recebiam funções do servidor (página quebrava) → formato por nome; percentuais com ponto → vírgula; funil mostrava "0%" ao dividir por etapa vazia → percentual sobre os leads.
+
 ## Instalação local (Docker) — executada neste ambiente
 Conjunto completo (aplicação + PostgreSQL + Evolution v2.3.8 + backup) com Docker Compose: saúde dos serviços, usuário de banco sem superpoderes, migrações, criação de administrador (senha fraca recusada), backup automático, 3 vendedores simultâneos isolados, sessão do WhatsApp criada automaticamente, persistência após desligar/religar ✅. Não executado aqui: scripts .bat/PowerShell (não há Windows) e leitura real do QR (rede do WhatsApp bloqueada).
 
@@ -84,4 +91,4 @@ Embedded Signup e envio/recebimento reais dependem do app da Marktvision aprovad
 4. Troca de ambiente do admin geral mantinha menu antigo → navegação completa após a troca.
 
 ## Pendentes de validação real (dependem de credenciais)
-Google Places API, Meta WhatsApp Cloud API, API de IA — Fases 03, 05 e 08.
+Google Places API, Meta WhatsApp Cloud API, provedores de IA (Gemini/Groq/Ollama/Anthropic) — Fases 03, 05 e 08. Leitura real do QR Code (Evolution) e scripts .bat no Windows.
