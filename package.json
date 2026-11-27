@@ -15,7 +15,8 @@
     "test:e2e": "tsx tests/e2e/run.ts",
     "start:prod": "tsx scripts/migrate.ts && tsx scripts/seed.ts && next start -p ${PORT:-3000}",
     "worker": "tsx scripts/worker.ts",
-    "admin": "tsx scripts/admin.ts"
+    "admin": "tsx scripts/admin.ts",
+    "test:perf": "tsx tests/perf/volume.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.14.0",

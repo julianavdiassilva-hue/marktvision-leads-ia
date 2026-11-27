@@ -86,16 +86,18 @@ export async function buildReport(ctx: AuthContext, type: string, f: ReportFilte
     }
     if (type === "mensagens") {
       const rows = await db.query(
-        `${F}select d::date as day,
-           count(m.*) filter (where m.direction = 'outbound' and m.status in ('sent','delivered','read'))::int as sent,
-           count(m.*) filter (where m.direction = 'outbound' and m.status in ('delivered','read'))::int as delivered,
-           count(m.*) filter (where m.direction = 'outbound' and m.status = 'read')::int as read,
-           count(m.*) filter (where m.direction = 'outbound' and m.status = 'failed')::int as failed,
-           count(m.*) filter (where m.direction = 'inbound')::int as received
-         from generate_series($2::date, $3::date, interval '1 day') d
-         left join messages m on m.company_id = $1 and m.created_at >= d and m.created_at < d + interval '1 day' and ($5::uuid is null or m.campaign_id = $5 or m.direction = 'inbound')
+        `${F}, x as (select date_trunc('day', m.created_at)::date as day,
+           count(*) filter (where m.direction = 'outbound' and m.status in ('sent','delivered','read'))::int as sent,
+           count(*) filter (where m.direction = 'outbound' and m.status in ('delivered','read'))::int as delivered,
+           count(*) filter (where m.direction = 'outbound' and m.status = 'read')::int as read,
+           count(*) filter (where m.direction = 'outbound' and m.status = 'failed')::int as failed,
+           count(*) filter (where m.direction = 'inbound')::int as received
+         from messages m where m.company_id = $1 and m.created_at >= $2::date and m.created_at < $3::date + 1
+           and ($5::uuid is null or m.campaign_id = $5 or m.direction = 'inbound')
            and ($4::uuid is null or exists (select 1 from conversations cv where cv.id = m.conversation_id and cv.assigned_user_id = $4))
-         group by d order by d`, P);
+         group by 1)
+       select d::date as day, coalesce(x.sent, 0) as sent, coalesce(x.delivered, 0) as delivered, coalesce(x.read, 0) as read, coalesce(x.failed, 0) as failed, coalesce(x.received, 0) as received
+         from generate_series($2::date, $3::date, interval '1 day') d left join x on x.day = d::date order by d`, P);
       return { ...base, columns: [{ key: "day", label: "Dia", kind: "date" }, { key: "sent", label: "Enviadas", kind: "int" }, { key: "delivered", label: "Entregues", kind: "int" },
         { key: "read", label: "Lidas", kind: "int" }, { key: "failed", label: "Falhas", kind: "int" }, { key: "received", label: "Recebidas", kind: "int" }], rows };
     }

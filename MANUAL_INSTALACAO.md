@@ -99,8 +99,9 @@ Depois teste em **Chatbot IA → Testar o agente**. Sem IA configurada, o sistem
 ## 6. Primeiro acesso e cadastro dos vendedores
 1. Entre com o **administrador geral** → menu **Empresas** → **Nova empresa** (só o nome é obrigatório).
 2. Na mesma tela, em **Acessos da empresa**, adicione o administrador da empresa e os **3 vendedores** (nome, login, senha, tipo "Vendedor").
-3. Entregue a cada vendedor: **endereço**, **login** e **senha**. No primeiro acesso, cada um pode trocar a própria senha em **Configurações**.
-4. Permissões individuais: **Usuários** (ou **Equipe Comercial**, pelo administrador da empresa) → clique no vendedor → **Permissões individuais**.
+3. Abra a empresa (menu **Empresas** → nome da empresa) e, em **Funcionalidades liberadas**, ligue os módulos que serão usados — por exemplo **Campanhas**, **WhatsApp Comercial**, **Chatbot IA** e **Exportação de dados**. O menu de cada usuário muda na hora.
+4. Entregue a cada vendedor: **endereço**, **login** e **senha**. No primeiro acesso, cada um pode trocar a própria senha em **Configurações**.
+5. Permissões individuais: **Usuários** (ou **Equipe Comercial**, pelo administrador da empresa) → clique no vendedor → **Permissões individuais**.
 
 Cada vendedor vê somente os próprios contatos, conversas e negociações; o administrador da empresa vê tudo da empresa; empresas diferentes nunca veem dados umas das outras.
 

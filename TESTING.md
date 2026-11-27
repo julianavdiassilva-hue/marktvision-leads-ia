@@ -72,6 +72,12 @@ Provedor de IA ausente → erro claro sem texto inventado · contexto/documentos
 Dashboard com filtros reais · vendedor restrito aos próprios números · relatórios de vendas/campanhas/perdas/prospecção/metas/mensagens · atendimento só para administrador · isolamento entre empresas · CSV sem injeção de fórmula e XLSX com números. E2E: filtro por vendedor, relatório de vendas com download CSV/Excel e versão PDF, vendedor sem dados de outros.
 Erros corrigidos: consultas com filtros não usados falhavam no PostgreSQL (parâmetros sem tipo) → declaração tipada dos filtros; gráficos recebiam funções do servidor (página quebrava) → formato por nome; percentuais com ponto → vírgula; funil mostrava "0%" ao dividir por etapa vazia → percentual sobre os leads.
 
+## Fase 10 — Integração 132/132 · E2E 52/52 · desempenho · atualização
+- E2E de segurança: cabeçalhos (CSP, X-Frame-Options), exportações e impressão bloqueadas sem sessão.
+- Desempenho (`npm run test:perf`, banco de teste): 20.000 contatos / 60.000 mensagens / 5.000 negociações — dashboard ≈ 0,65 s; relatórios 3–470 ms.
+- Atualização de instalação existente (Docker): banco na migração 0008 com empresa e 5 usuários → backup → nova imagem → 0009 e 0010 aplicadas automaticamente, dados preservados; gestora + 3 vendedores simultâneos abrindo dashboard, relatórios, contatos, conversas e CRM; sem bloqueios de CSP.
+- Observação do ambiente de testes: o Docker Hub limitou downloads (429); a imagem base foi obtida do espelho público `mirror.gcr.io` só nesta simulação.
+
 ## Instalação local (Docker) — executada neste ambiente
 Conjunto completo (aplicação + PostgreSQL + Evolution v2.3.8 + backup) com Docker Compose: saúde dos serviços, usuário de banco sem superpoderes, migrações, criação de administrador (senha fraca recusada), backup automático, 3 vendedores simultâneos isolados, sessão do WhatsApp criada automaticamente, persistência após desligar/religar ✅. Não executado aqui: scripts .bat/PowerShell (não há Windows) e leitura real do QR (rede do WhatsApp bloqueada).
 

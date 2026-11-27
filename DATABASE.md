@@ -66,6 +66,9 @@ A Evolution API usa o MESMO PostgreSQL em schema separado `evolution_api` (criad
 ## Fase 09
 Sem tabelas novas: dashboard e relatórios são consultas sobre `contacts`, `campaigns`, `campaign_contacts`, `messages`, `conversations`, `opportunities`, `sales` e `goals` (sempre filtradas por `company_id` e RLS).
 
+## 0010 — Índices de relatórios
+Índices para dashboard e relatórios com grande volume: `messages(contact_id, direction)`, `messages(campaign_id)`, `opportunities(campaign_id)`, `opportunities(company_id, status, data de fechamento)`, `sales(campaign_id)`, `sales(contact_id)`, `contacts(company_id, source)`.
+
 ## Triggers
 - `set_updated_at` em tabelas editáveis.
 - `create_default_pipeline` (após inserir empresa): funil com 9 etapas (Novo lead … Venda realizada, Perdido) + `ai_settings`.

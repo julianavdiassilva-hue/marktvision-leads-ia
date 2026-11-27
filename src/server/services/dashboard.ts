@@ -77,13 +77,16 @@ export async function dashboardData(ctx: AuthContext, f: DashFilters) {
         (select coalesce(sum(s.amount),0)::text from sales s join contacts c on c.id = s.contact_id where s.company_id = $1 and ${inPeriod("s.sold_at")} and ($4::uuid is null or s.seller_user_id = $4)
            and ($5::uuid is null or s.campaign_id = $5) and ($6::text is null or c.source = $6)) as sales_amount`, P);
     const daily = await db.query<{ day: string; leads: number; replies: number; sales: number }>(
-      `${F}select d::date::text as day,
-         (select count(*)::int from contacts c where c.company_id = $1 and ${ctc("c")} and c.created_at >= d and c.created_at < d + interval '1 day') as leads,
-         (select count(distinct m.contact_id)::int from messages m join contacts c on c.id = m.contact_id where m.company_id = $1 and m.direction = 'inbound' and ${ctc("c")}
-            and m.created_at >= d and m.created_at < d + interval '1 day') as replies,
-         (select count(*)::int from sales s join contacts c on c.id = s.contact_id where s.company_id = $1 and ($4::uuid is null or s.seller_user_id = $4) and ($5::uuid is null or s.campaign_id = $5)
-            and ($6::text is null or c.source = $6) and s.sold_at >= d and s.sold_at < d + interval '1 day') as sales
-       from generate_series($2::date, $3::date, interval '1 day') d order by d`, P);
+      `${F}, l as (select date_trunc('day', c.created_at)::date as day, count(*)::int as n from contacts c
+           where c.company_id = $1 and ${ctc("c")} and c.created_at >= $2::date and c.created_at < $3::date + 1 group by 1),
+         r as (select day, count(distinct contact_id)::int as n from (select date_trunc('day', m.created_at)::date as day, m.contact_id from messages m join contacts c on c.id = m.contact_id
+           where m.company_id = $1 and m.direction = 'inbound' and ${ctc("c")} and m.created_at >= $2::date and m.created_at < $3::date + 1) x group by 1),
+         v as (select date_trunc('day', s.sold_at)::date as day, count(*)::int as n from sales s join contacts c on c.id = s.contact_id
+           where s.company_id = $1 and ($4::uuid is null or s.seller_user_id = $4) and ($5::uuid is null or s.campaign_id = $5) and ($6::text is null or c.source = $6)
+             and s.sold_at >= $2::date and s.sold_at < $3::date + 1 group by 1)
+       select d::date::text as day, coalesce(l.n, 0) as leads, coalesce(r.n, 0) as replies, coalesce(v.n, 0) as sales
+         from generate_series($2::date, $3::date, interval '1 day') d
+         left join l on l.day = d::date left join r on r.day = d::date left join v on v.day = d::date order by d`, P);
     const bySeller = ctx.role === "seller" ? [] : await db.query<{ name: string; sales_count: number; sales_amount: string }>(
       `${F}select u.name, count(s.id)::int as sales_count, coalesce(sum(s.amount),0)::text as sales_amount
          from company_memberships m join users u on u.id = m.user_id

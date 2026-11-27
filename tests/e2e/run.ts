@@ -600,6 +600,20 @@ async function main() {
       await page.getByText("Nenhum dado no período").waitFor();
       assert(await page.getByRole("link", { name: "Atendimento" }).count() === 0, "vendedor não deveria ver relatório de atendimento");
     });
+
+    console.log("Fase 10 — segurança");
+    await step("cabeçalhos de segurança e rotas protegidas sem sessão", async () => {
+      const r = await fetch(`${BASE}/login`);
+      const csp = r.headers.get("content-security-policy") ?? "";
+      assert(csp.includes("frame-ancestors 'none'") && csp.includes("object-src 'none'"), "CSP ausente");
+      assert(r.headers.get("x-frame-options") === "DENY" && !r.headers.get("x-powered-by"), "cabeçalhos ausentes");
+      for (const path of ["/api/relatorios/exportar?tipo=vendas", "/api/contatos/exportar"]) {
+        const x = await fetch(`${BASE}${path}`, { redirect: "manual" });
+        assert(x.status === 401 || (x.status >= 300 && x.status < 400), `${path} acessível sem sessão (${x.status})`);
+      }
+      const p = await fetch(`${BASE}/imprimir/relatorio?tipo=vendas`, { redirect: "manual" });
+      assert(p.status >= 300 && p.status < 400, "impressão de relatório acessível sem sessão");
+    });
     await browser.close();
   } finally {
     try { process.kill(-server.pid!); } catch {}

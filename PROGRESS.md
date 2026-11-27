@@ -147,7 +147,18 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Relatórios: prospecção/captação, campanhas, mensagens/respostas, atendimento e desempenho (só administrador), vendas, conversão/perdas, metas | ✅ |
 | Exportação CSV (Excel PT-BR, proteção contra fórmulas), Excel .xlsx (números somáveis) e PDF (versão para impressão → "Salvar como PDF") | ✅ (exige a funcionalidade "Exportação de dados") |
 
-## Instalação local gratuita (Windows + Docker) — ✅ preparada (26/11/2026)
+## Fase 10 — Testes integrados, segurança e desempenho — ✅ concluída (27/11/2026)
+| Item | Status |
+|---|---|
+| Política de segurança de conteúdo (CSP), anti-iframe, sem cabeçalho de tecnologia | ✅ |
+| Cookie de sessão marcado como "Secure" automaticamente quando o acesso é por HTTPS (túnel) | ✅ |
+| Revisão: todas as ações do servidor passam por `runAction`; rotas de exportação e impressão exigem sessão; `SYSTEM` só em login, fila e webhooks | ✅ |
+| Índices de relatórios (0010) e consultas diárias agregadas (relatório de mensagens ~9x mais rápido) | ✅ |
+| Teste de volume (`npm run test:perf`): 20 mil contatos, 60 mil mensagens, 5 mil negociações → pior tempo < 0,7 s | ✅ |
+| Simulação de ATUALIZAÇÃO de uma instalação existente: backup, nova versão, migrações 0009/0010 aplicadas, dados preservados, 4 usuários simultâneos | ✅ |
+| Pendências conhecidas: `xlsx` 0.18.5 tem alerta de segurança na LEITURA de arquivos — a leitura ocorre só no navegador do usuário e o servidor só GERA planilhas (não afetado) | ⚠️ registrado |
+
+ (Windows + Docker) — ✅ preparada (26/11/2026)
 | Item | Status | Evidência |
 |---|---|---|
 | docker-compose: aplicação, PostgreSQL 16, Evolution API v2.3.8, backup automático, túnel Cloudflare (temporário ou domínio) | ✅ | conjunto executado com Docker neste ambiente |
@@ -171,7 +182,7 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 ## Próximas fases
 | Módulo | Status |
 |---|---|
-| Testes integrados finais, revisão de segurança, desempenho, preparação comercial | ⏭ Fase 10 |
+| Validação real no Windows (INSTALAR.bat), leitura dos 3 QR Codes, escolha do provedor de IA | aguardando a cliente |
 
 ## Decisões registradas
 - IA e pesquisa: opções gratuitas por padrão para testes (Gemini/Groq/Ollama; OpenStreetMap). Serviços pagos só com autorização.

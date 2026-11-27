@@ -12,9 +12,11 @@ export const getAuth = cache(async (): Promise<AuthContext | null> => {
 });
 
 export async function setSessionCookie(token: string) {
+  // HTTPS (túnel Cloudflare/hospedagem) → cookie só trafega cifrado; HTTP da rede local continua funcionando.
+  const https = (await headers()).get("x-forwarded-proto")?.split(",")[0]?.trim() === "https";
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true, sameSite: "lax", path: "/",
-    secure: process.env.COOKIE_SECURE === "true",
+    secure: process.env.COOKIE_SECURE === "true" || https,
     maxAge: SESSION_DAYS * 24 * 3600,
   });
 }
