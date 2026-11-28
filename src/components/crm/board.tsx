@@ -146,7 +146,7 @@ function LoseModal({ card, reasons, onClose, onDone }: { card: OppCard | null; r
     <Modal open={!!card} onClose={onClose} title="Negociação perdida" description="O motivo alimenta os relatórios de perda.">
       <div className="grid gap-2 sm:grid-cols-2">{reasons.map((r) => (
         <label key={r} className={clsx("flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-[15px]", reason === r ? "border-brand bg-brand-50" : "border-line")}>
-          <input type="radio" className="accent-[#008C48]" checked={reason === r} onChange={() => setReason(r)} />{r}</label>))}</div>
+          <input type="radio" className="accent-brand" checked={reason === r} onChange={() => setReason(r)} />{r}</label>))}</div>
       {reason === "Outro" && <input className="input mt-3" placeholder="Descreva o motivo" value={other} onChange={(e) => setOther(e.target.value)} aria-label="Outro motivo" />}
       {err && <p role="alert" className="mt-2 text-[14px] font-medium text-danger">{err}</p>}
       <div className="mt-5 flex justify-end gap-2"><button className="btn btn-secondary" onClick={onClose}>Cancelar</button>

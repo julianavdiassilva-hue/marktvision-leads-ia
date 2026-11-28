@@ -172,7 +172,7 @@ export function CampaignWizard({ initial, lists, team, scripts: initialScripts, 
               <div className="space-y-2">
                 {connections.map((c) => (
                   <label key={c.id} className={clsx("flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3", connId === c.id ? "border-brand bg-brand-50" : "border-line")}>
-                    <input type="radio" className="h-4 w-4 accent-[#008C48]" checked={connId === c.id} onChange={() => setConnId(c.id)} />
+                    <input type="radio" className="h-4 w-4 accent-brand" checked={connId === c.id} onChange={() => setConnId(c.id)} />
                     <MessageCircle className="h-5 w-5 text-brand" />
                     <span className="flex-1"><b>{c.display_name}</b> {c.phone_number && <span className="text-muted">· {c.phone_number}</span>}</span>
                     <Badge tone={c.status === "connected" ? "green" : "red"}>{c.status === "connected" ? "Conectado" : "Desconectado"}</Badge>
@@ -220,7 +220,7 @@ export function CampaignWizard({ initial, lists, team, scripts: initialScripts, 
                  ["ai", "Atendimento com IA", Bot, "O agente da empresa responde usando o contexto cadastrado."],
                  ["ai_then_human", "IA + transferência ao vendedor", Sparkles, "A IA recepciona e qualifica; leads interessados vão para o vendedor."]] as const).map(([k, l, Icon, d]) => (
                 <label key={k} className={clsx("cursor-pointer rounded-xl border-2 p-4", mode === k ? "border-brand bg-brand-50" : "border-line")}>
-                  <div className="flex items-center gap-2.5"><input type="radio" className="h-4 w-4 accent-[#008C48]" checked={mode === k} onChange={() => setMode(k)} /><Icon className="h-5 w-5 text-brand" /><b className="text-[15.5px]">{l}</b></div>
+                  <div className="flex items-center gap-2.5"><input type="radio" className="h-4 w-4 accent-brand" checked={mode === k} onChange={() => setMode(k)} /><Icon className="h-5 w-5 text-brand" /><b className="text-[15.5px]">{l}</b></div>
                   <p className="mt-2 text-[14px] text-muted">{d}</p>
                 </label>
               ))}
@@ -306,7 +306,7 @@ function SelectionStep({ pool, setPool, selected, setSelected, canLists, onSaved
               <thead><tr><th className="w-10" /><th>Contato</th><th>Telefone</th><th>Cidade</th><th>Responsável</th><th /></tr></thead>
               <tbody>{rows.slice(0, 1000).map((c) => (
                 <tr key={c.id}>
-                  <td><input type="checkbox" className="h-4 w-4 accent-[#008C48]" aria-label={`Selecionar ${c.name ?? c.phone_e164}`} disabled={c.consent_status === "opted_out"} checked={selected.has(c.id)}
+                  <td><input type="checkbox" className="h-4 w-4 accent-brand" aria-label={`Selecionar ${c.name ?? c.phone_e164}`} disabled={c.consent_status === "opted_out"} checked={selected.has(c.id)}
                     onChange={(e) => { const s = new Set(selected); if (e.target.checked) s.add(c.id); else s.delete(c.id); setSelected(s); }} /></td>
                   <td><p className="font-semibold">{c.name || c.organization || "—"}</p>{c.organization && c.name && <p className="text-[13px] text-muted">{c.organization}</p>}
                     {c.consent_status === "opted_out" && <Badge tone="red">Descadastrado — não recebe</Badge>}</td>

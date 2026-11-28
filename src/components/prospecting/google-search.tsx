@@ -70,17 +70,17 @@ export function GoogleSearch({ configured, provider = "google", lists, team, can
         <div className="mt-6">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-[15px]"><b>{results.length}</b> resultado(s) para “{query}”</p>
-            <label className="flex items-center gap-2 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-[#008C48]" checked={onlyPhone} onChange={(e) => setOnlyPhone(e.target.checked)} />Somente com telefone</label>
+            <label className="flex items-center gap-2 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-brand" checked={onlyPhone} onChange={(e) => setOnlyPhone(e.target.checked)} />Somente com telefone</label>
           </div>
           <div className="panel overflow-x-auto">
             <table className="table min-w-[900px]">
               <thead><tr>
-                <th className="w-10"><input type="checkbox" aria-label="Selecionar todos" className="h-4 w-4 accent-[#008C48]" checked={visible.length > 0 && visible.every((r) => sel.has(r.placeId))}
+                <th className="w-10"><input type="checkbox" aria-label="Selecionar todos" className="h-4 w-4 accent-brand" checked={visible.length > 0 && visible.every((r) => sel.has(r.placeId))}
                   onChange={(e) => setSel(e.target.checked ? new Set(visible.map((r) => r.placeId)) : new Set())} /></th>
                 <th>Empresa</th><th>Telefone</th><th>Endereço</th><th>Categoria</th><th>{provider === "osm" ? "" : "Avaliação"}</th><th /></tr></thead>
               <tbody>{visible.map((r) => (
                 <tr key={r.placeId} className={clsx(sel.has(r.placeId) && "[&>td]:bg-brand-50")}>
-                  <td><input type="checkbox" aria-label={`Selecionar ${r.name}`} className="h-4 w-4 accent-[#008C48]" checked={sel.has(r.placeId)}
+                  <td><input type="checkbox" aria-label={`Selecionar ${r.name}`} className="h-4 w-4 accent-brand" checked={sel.has(r.placeId)}
                     onChange={(e) => { const s = new Set(sel); if (e.target.checked) s.add(r.placeId); else s.delete(r.placeId); setSel(s); }} /></td>
                   <td><p className="font-semibold">{r.name}</p>{r.website && <a href={r.website} target="_blank" rel="noreferrer" className="text-[13px] text-brand-dark hover:underline">{r.website.replace(/^https?:\/\//, "").slice(0, 40)}</a>}</td>
                   <td className="whitespace-nowrap">{formatPhone(r.phoneE164) || <span className="text-muted">Sem telefone</span>}</td>

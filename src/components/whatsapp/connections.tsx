@@ -70,7 +70,7 @@ function ConnectionCard({ c, team, memberIds, canManage }: { c: ConnectionRow; t
             <div className="flex flex-wrap gap-2">
               {team.map((t) => (
                 <label key={t.id} className={clsx("flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-[14.5px]", sel.has(t.id) ? "border-brand bg-brand-50 font-semibold" : "border-line")}>
-                  <input type="checkbox" className="h-4 w-4 accent-[#008C48]" checked={sel.has(t.id)} onChange={(e) => { const s = new Set(sel); if (e.target.checked) s.add(t.id); else s.delete(t.id); setSel(s); }} />{t.name}
+                  <input type="checkbox" className="h-4 w-4 accent-brand" checked={sel.has(t.id)} onChange={(e) => { const s = new Set(sel); if (e.target.checked) s.add(t.id); else s.delete(t.id); setSel(s); }} />{t.name}
                 </label>
               ))}
             </div>

@@ -34,7 +34,8 @@ describe("1-6. Empresas, usuários, login e permissões", () => {
     expect(company.name).toBe("Clínica Sorriso");
     expect(company.document).toBeNull();
     expect(company.plan_name).toBe("Completo");
-    expect(features.every((f) => f.enabled)).toBe(true);
+    // Todas liberadas, exceto "Identidade visual", que o administrador geral libera individualmente.
+    expect(features.filter((f) => !f.enabled).map((f) => f.key)).toEqual(["branding"]);
   });
 
   it("rejeita empresa sem nome com mensagem em português", async () => {

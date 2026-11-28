@@ -21,6 +21,7 @@ export const FEATURES = [
   { key: "goals", name: "Metas" },
   { key: "reports", name: "Relatórios" },
   { key: "data_export", name: "Exportação de dados" },
+  { key: "branding", name: "Identidade visual" },
 ] as const;
 
 export type FeatureKey = (typeof FEATURES)[number]["key"];
@@ -37,7 +38,7 @@ export const SELLER_DEFAULT_FEATURES: FeatureKey[] = [
 ];
 
 /** Funcionalidades administrativas que exigem perfil de administrador da empresa. */
-export const ADMIN_ONLY_FEATURES: FeatureKey[] = ["sales_team", "whatsapp", "ai_chatbot"];
+export const ADMIN_ONLY_FEATURES: FeatureKey[] = ["sales_team", "whatsapp", "ai_chatbot", "branding"];
 
 export type Role = "platform_admin" | "company_admin" | "seller";
 export const ROLE_LABEL: Record<Role, string> = {

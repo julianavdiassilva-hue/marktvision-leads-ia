@@ -68,7 +68,7 @@ function EntryModal({ entry, categories, onClose, onDone }: { entry: Partial<Ent
         <div><label className="label" htmlFor="k-title">Título</label><input id="k-title" className="input" value={v.title ?? ""} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder="Ex.: Instalação de ar split" /></div>
         <div className="sm:col-span-2"><label className="label" htmlFor="k-content">Conteúdo</label>
           <textarea id="k-content" className="input" rows={8} value={v.content ?? ""} onChange={(e) => setF({ ...f, content: e.target.value })} placeholder="Escreva como explicaria a um novo atendente. Inclua valores e condições exatamente como devem ser informados." /></div>
-        <label className="flex items-center gap-2.5 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-[#008C48]" checked={v.is_active ?? true} onChange={(e) => setF({ ...f, is_active: e.target.checked })} />Usar no atendimento</label>
+        <label className="flex items-center gap-2.5 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-brand" checked={v.is_active ?? true} onChange={(e) => setF({ ...f, is_active: e.target.checked })} />Usar no atendimento</label>
       </div>
       {err && <p role="alert" className="mt-2 text-[14px] font-medium text-danger">{err}</p>}
       <div className="mt-5 flex justify-end gap-2"><button className="btn btn-secondary" onClick={() => { setF({}); onClose(); }}>Cancelar</button>

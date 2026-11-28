@@ -8,6 +8,19 @@ import { listCompanyOptions } from "@/server/services/companies";
 import { unreadCount } from "@/server/services/conversations";
 import { Shell } from "@/components/shell";
 import { ROLE_LABEL } from "@/lib/features";
+import { activeBrand } from "@/server/services/branding";
+import { BrandStyle } from "@/components/brand";
+import { getAuth } from "@/server/auth/next";
+import type { Metadata } from "next";
+
+/** Título das abas com o nome exibido da empresa (quando personalizado). */
+export async function generateMetadata(): Promise<Metadata> {
+  const ctx = await getAuth();
+  const path = (await headers()).get("x-mv-path") ?? "";
+  const brand = ctx && !path.startsWith("/admin") ? await activeBrand(ctx).catch(() => null) : null;
+  const name = brand?.displayName ?? (brand ? brand.companyName : null);
+  return name ? { title: { default: name, template: `%s · ${name}` } } : {};
+}
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requirePage();
@@ -27,7 +40,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const platform = ctx.user.isPlatformAdmin ? PLATFORM_NAV : [];
   const companies = ctx.user.isPlatformAdmin ? await listCompanyOptions(ctx) : [];
   const unread = await unreadCount(ctx).catch(() => 0);
+  // Identidade visual da empresa ativa — nunca no painel do administrador geral (/admin).
+  const brand = await activeBrand(ctx).catch(() => null);
   return (
+    <>
+    <BrandStyle colors={brand?.colors ?? null} />
     <Shell
       main={main.map(({ href, label, icon, phase }) => ({ href, label, icon, phase, badge: href === "/conversas" && unread ? unread : undefined }))}
       platform={platform.map(({ href, label, icon }) => ({ href, label, icon }))}
@@ -35,8 +52,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       company={ctx.company}
       companies={companies}
       isPlatformAdmin={ctx.user.isPlatformAdmin}
+      brand={brand ? { name: brand.displayName ?? brand.companyName, logoUrl: brand.logoUrl } : null}
     >
       {children}
     </Shell>
+    </>
   );
 }

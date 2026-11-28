@@ -23,7 +23,7 @@ export function PlanCreateButton() {
           <div className="grid gap-2 sm:grid-cols-3">
             {FEATURES.map((f) => (
               <label key={f.key} className="flex items-center gap-2.5 rounded-lg border border-line px-3 py-2 text-[15px] hover:bg-brand-50">
-                <input type="checkbox" name="features" value={f.key} className="h-4 w-4 accent-[#008C48]" />{f.name}
+                <input type="checkbox" name="features" value={f.key} className="h-4 w-4 accent-brand" />{f.name}
               </label>
             ))}
           </div>
@@ -57,7 +57,7 @@ export function PlanCard({ plan }: { plan: Plan }) {
             <Field label="Nome" name="name"><input name="name" className="input" defaultValue={plan.name} /></Field>
             <Field label="Descrição" name="description" optional><input name="description" className="input" defaultValue={plan.description ?? ""} /></Field>
             {LIMIT_FIELDS.map((f) => <Field key={f.key} label={f.label} name={f.key}><input name={f.key} inputMode="numeric" className="input" defaultValue={plan.limits[f.key] ?? ""} placeholder="Ilimitado" /></Field>)}
-            <label className="flex items-center gap-2.5 text-[15px] font-medium"><input type="checkbox" name="isActive" defaultChecked={plan.is_active} className="h-4 w-4 accent-[#008C48]" />Plano disponível para novas empresas</label>
+            <label className="flex items-center gap-2.5 text-[15px] font-medium"><input type="checkbox" name="isActive" defaultChecked={plan.is_active} className="h-4 w-4 accent-brand" />Plano disponível para novas empresas</label>
           </div>
           <div className="mt-4 flex justify-end"><SubmitButton>Salvar plano</SubmitButton></div>
         </ActionForm>

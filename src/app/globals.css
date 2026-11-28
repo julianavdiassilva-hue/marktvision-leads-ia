@@ -18,13 +18,26 @@
   --color-danger-light: #fdecea;
   --color-warning: #9a5b00;
   --color-warning-light: #fff4e0;
+  /* Tokens personalizáveis por empresa (White Label) — padrões = identidade Marktvision.
+     Sobrescritos em tempo de execução por <BrandStyle> (src/components/brand.tsx). */
+  --color-page: #ffffff;
+  --color-btn: #008c48;
+  --color-btn-hover: #006b38;
+  --color-btn-ink: #ffffff;
+  --color-sidebar: #f7f9f8;
+  --color-sidebar-ink: #172b22;
+  --color-sidebar-muted: #55665d;
+  --color-sidebar-hover: #ffffff;
+  --color-sidebar-active: #e8f5ec;
+  --color-sidebar-active-ink: #006b38;
+  --color-sidebar-icon: #008c48;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   --radius-xl: 0.875rem;
 }
 
 html { font-size: 16px; }
 body {
-  background: #ffffff;
+  background: var(--color-page);
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -41,7 +54,7 @@ body {
            transition select-none disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap;
   }
   .btn-sm { @apply px-3 py-1.5 text-[14px]; }
-  .btn-primary { @apply bg-brand text-white shadow-sm hover:bg-brand-dark focus-visible:ring-4 focus-visible:ring-brand/25; }
+  .btn-primary { @apply bg-btn text-btn-ink shadow-sm hover:bg-btn-hover focus-visible:ring-4 focus-visible:ring-brand/25; }
   .btn-secondary { @apply border border-line bg-white text-ink hover:border-brand/40 hover:bg-brand-50; }
   .btn-ghost { @apply text-brand-dark hover:bg-brand-light; }
   .btn-danger { @apply border border-danger/30 bg-white text-danger hover:bg-danger-light; }

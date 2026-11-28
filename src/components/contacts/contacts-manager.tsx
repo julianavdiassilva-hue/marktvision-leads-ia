@@ -99,7 +99,7 @@ export function ContactsManager({ rows, total, page, pages, filters, lists, tags
           <table className="table min-w-[980px]">
             <thead>
               <tr>
-                <th className="w-10"><input type="checkbox" aria-label="Selecionar página" className="h-4 w-4 accent-[#008C48]" checked={allOnPage || allMatching}
+                <th className="w-10"><input type="checkbox" aria-label="Selecionar página" className="h-4 w-4 accent-brand" checked={allOnPage || allMatching}
                   onChange={(e) => { const s = new Set(selected); pageIds.forEach((id) => (e.target.checked ? s.add(id) : s.delete(id))); setSelected(s); setAllMatching(false); }} /></th>
                 <th>Contato</th><th>Telefone</th><th>Cidade</th><th>Etiquetas</th><th>Situação</th>{!perms.isSeller && <th>Responsável</th>}<th>Origem</th><th>Cadastro</th>
               </tr>
@@ -112,7 +112,7 @@ export function ContactsManager({ rows, total, page, pages, filters, lists, tags
               )}
               {rows.map((r) => (
                 <tr key={r.id} className={clsx((selected.has(r.id) || allMatching) && "[&>td]:bg-brand-50")}>
-                  <td><input type="checkbox" aria-label={`Selecionar ${r.name ?? r.phone_e164}`} className="h-4 w-4 accent-[#008C48]" checked={allMatching || selected.has(r.id)}
+                  <td><input type="checkbox" aria-label={`Selecionar ${r.name ?? r.phone_e164}`} className="h-4 w-4 accent-brand" checked={allMatching || selected.has(r.id)}
                     onChange={(e) => { const s = new Set(selected); if (e.target.checked) s.add(r.id); else s.delete(r.id); setSelected(s); setAllMatching(false); }} /></td>
                   <td>
                     <Link href={`/contatos/${r.id}`} className="font-semibold text-ink hover:text-brand">{r.name || r.organization || formatPhone(r.phone_e164) || r.email}</Link>
@@ -226,7 +226,7 @@ export function ConsentModal({ open, onClose, count, onSave }: { open: boolean; 
       <div className="space-y-4">
         <div className="space-y-2">
           {Object.entries(CONSENT_LABEL).map(([k, l]) => (
-            <label key={k} className="flex items-center gap-2.5 text-[15px]"><input type="radio" name="consent" value={k} checked={status === k} onChange={() => setStatus(k)} className="h-4 w-4 accent-[#008C48]" />{l}</label>
+            <label key={k} className="flex items-center gap-2.5 text-[15px]"><input type="radio" name="consent" value={k} checked={status === k} onChange={() => setStatus(k)} className="h-4 w-4 accent-brand" />{l}</label>
           ))}
         </div>
         <div>
@@ -255,9 +255,9 @@ function DistributeButton({ team, pending, selection }: { team: Opt[]; pending: 
       <button className="btn btn-secondary btn-sm" disabled={pending} onClick={() => setOpen(true)}>Distribuir entre vendedores</button>
       <Modal open={open} onClose={() => setOpen(false)} title="Distribuir leads" description="Rodízio entre os vendedores escolhidos, começando por quem tem menos contatos. Conversas e negociações abertas acompanham o contato.">
         <div className="space-y-2">{team.map((t) => (
-          <label key={t.id} className="flex items-center gap-2.5 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-[#008C48]" checked={sel.has(t.id)}
+          <label key={t.id} className="flex items-center gap-2.5 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-brand" checked={sel.has(t.id)}
             onChange={(e) => { const s = new Set(sel); if (e.target.checked) s.add(t.id); else s.delete(t.id); setSel(s); }} />{t.name}</label>))}</div>
-        <label className="mt-4 flex items-center gap-2.5 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-[#008C48]" checked={only} onChange={(e) => setOnly(e.target.checked)} />Somente contatos sem responsável</label>
+        <label className="mt-4 flex items-center gap-2.5 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-brand" checked={only} onChange={(e) => setOnly(e.target.checked)} />Somente contatos sem responsável</label>
         {msg && <p className="mt-3 text-[14.5px] font-medium text-danger">{msg}</p>}
         <div className="mt-5 flex justify-end gap-2"><button className="btn btn-secondary" onClick={() => setOpen(false)}>Cancelar</button>
           <button className="btn btn-primary" disabled={busy || !sel.size} onClick={() => start(async () => {

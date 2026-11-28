@@ -23,6 +23,7 @@ export const MAIN_NAV: NavItem[] = [
   { href: "/whatsapp", label: "WhatsApp Comercial", icon: "MessageCircle", anyOf: ["whatsapp"] },
   { href: "/equipe", label: "Equipe Comercial", icon: "UserCog", anyOf: ["sales_team"], adminOnly: true },
   { href: "/relatorios", label: "Relatórios", icon: "BarChart3", anyOf: ["reports"] },
+  { href: "/identidade-visual", label: "Identidade visual", icon: "Palette", anyOf: ["branding"], adminOnly: true },
   { href: "/configuracoes", label: "Configurações", icon: "Settings", anyOf: [] },
 ];
 

@@ -614,6 +614,144 @@ async function main() {
       const p = await fetch(`${BASE}/imprimir/relatorio?tipo=vendas`, { redirect: "manual" });
       assert(p.status >= 300 && p.status < 400, "impressão de relatório acessível sem sessão");
     });
+
+    console.log("Identidade visual (White Label)");
+    const cssVar = (pg: Page, v: string) => pg.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), v);
+    const makeLogo = async (text: string, bg: string) => {
+      const p2 = await browser.newPage({ viewport: { width: 400, height: 200 } });
+      await p2.setContent(`<div id="l" style="display:inline-flex;align-items:center;gap:10px;padding:10px 14px;font:800 30px Arial;color:${bg}"><span style="width:44px;height:44px;border-radius:12px;background:${bg};display:inline-block"></span>${text}</div>`);
+      const buf = await p2.locator("#l").screenshot({ omitBackground: true }); await p2.close(); return buf;
+    };
+    const PARA = { primary: "#c2410c", secondary: "#9a3412", button: "#ea580c", sidebar: "#431407", background: "#fffbf5", text: "#1c1917" };
+    const ALFA = { primary: "#1d4ed8", secondary: "#1e3a8a", button: "#2563eb", sidebar: "#eff6ff", background: "#ffffff", text: "#0f172a" };
+    const brandCompany = async (company: string, name: string, logo: Buffer, colors: Record<string, string>, shot?: string) => {
+      await page.goto(`${BASE}/admin/empresas`);
+      await page.getByRole("link", { name: company }).click();
+      await page.getByRole("link", { name: "Identidade Visual" }).click();
+      await page.getByTestId("branding-preview").waitFor();
+      await page.getByTestId("logo-input").setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: logo });
+      await page.getByRole("status").filter({ hasText: "Logomarca atualizada" }).waitFor();
+      await page.fill("#b-name", name);
+      for (const [k, v] of Object.entries(colors)) await page.fill(`#c-${k}`, v);
+      const prev = await page.getByTestId("branding-preview").evaluate((el) => getComputedStyle(el).getPropertyValue("--color-btn").trim());
+      assert(prev === colors.button, `pré-visualização não aplicou a cor dos botões (${prev})`);
+      if (shot) await page.screenshot({ path: `${SHOTS}/${shot}`, fullPage: true });
+      await page.getByRole("button", { name: "Salvar personalização" }).click();
+      await page.getByRole("status").filter({ hasText: "Identidade visual salva" }).waitFor();
+    };
+    let logoPara: Buffer, logoAlfa: Buffer;
+    await step("admin geral cadastra a segunda empresa (Clínica Alfa) com administrador e vendedor", async () => {
+      logoPara = await makeLogo("Pará Frio", "#c2410c"); logoAlfa = await makeLogo("Alfa Odonto", "#1d4ed8");
+      await login(page, "admin", "admin-e2e-2026");
+      await page.goto(`${BASE}/admin/empresas`);
+      await page.getByRole("button", { name: "Nova empresa" }).click();
+      await page.fill("#name", "Clínica Alfa");
+      for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "Adicionar acesso" }).click();
+      const rows = [["Ana Alfa", "alfa.admin", "alfasenha1", "company_admin"], ["Bruno Alfa", "alfa.vend", "alfavend12", "seller"]];
+      for (const [i, [n, u, p2, r]] of rows.entries()) {
+        await page.fill(`input[name="users[${i}][name]"]`, n); await page.fill(`input[name="users[${i}][username]"]`, u);
+        await page.fill(`input[name="users[${i}][password]"]`, p2); await page.selectOption(`select[name="users[${i}][role]"]`, r);
+      }
+      await page.getByRole("button", { name: "Cadastrar empresa" }).click();
+      await page.waitForURL(/\/admin\/empresas\/[0-9a-f-]{36}/);
+    });
+    await step("aba Identidade Visual: logomarca, cores (seletor/hex), nome e pré-visualização em tempo real — empresa 1", async () => {
+      await brandCompany("Refrigeração Pará", "Pará Frio", logoPara, PARA, "24-identidade-visual-editor.png");
+    });
+    await step("empresa 2 com logomarca e cores diferentes", async () => {
+      await brandCompany("Clínica Alfa", "Alfa Odonto", logoAlfa, ALFA);
+    });
+    await step("cores sem contraste são bloqueadas com explicação", async () => {
+      await page.fill("#c-text", "#eeeeee");
+      await page.getByRole("alert").filter({ hasText: "pouco contraste" }).waitFor();
+      assert(await page.getByRole("button", { name: "Salvar personalização" }).isDisabled(), "salvar deveria ficar bloqueado");
+      await page.reload();
+      assert((await page.inputValue("#c-text")).toLowerCase() === ALFA.text, "cor inválida não deveria ter sido salva");
+    });
+    await step("vendedora da empresa 1 vê a identidade dela em dashboard, menu, cabeçalho, contatos, conversas e CRM", async () => {
+      await login(page, "sara.ref", "sarasenha1");
+      for (const path of ["/dashboard", "/contatos", "/conversas", "/crm"]) {
+        await page.goto(`${BASE}${path}`);
+        assert(await cssVar(page, "--color-btn") === PARA.button && await cssVar(page, "--color-brand") === PARA.primary, `${path} sem as cores da empresa 1`);
+        assert(await page.locator("aside").first().evaluate((el) => getComputedStyle(el).backgroundColor) === "rgb(67, 20, 7)", `${path}: menu lateral sem a cor da empresa`);
+        assert(await page.locator("body").evaluate((el) => getComputedStyle(el).backgroundColor) === "rgb(255, 251, 245)", `${path}: fundo sem a cor da empresa`);
+      }
+      assert(await page.getByTestId("brand-logo").first().getAttribute("alt") === "Pará Frio", "logomarca da empresa 1 ausente");
+      await page.locator("header").getByText("Pará Frio").waitFor();
+      assert((await page.title()).includes("Pará Frio"), "título da aba sem o nome exibido");
+      await page.goto(`${BASE}/dashboard`);
+      await page.screenshot({ path: `${SHOTS}/25-identidade-empresa1.png` });
+    });
+    await step("vendedor da empresa 2 vê somente a identidade da empresa 2", async () => {
+      await login(page, "alfa.vend", "alfavend12");
+      await page.goto(`${BASE}/dashboard`);
+      assert(await cssVar(page, "--color-btn") === ALFA.button && await cssVar(page, "--color-brand") === ALFA.primary, "cores da empresa 2 incorretas");
+      assert(await page.getByTestId("brand-logo").first().getAttribute("alt") === "Alfa Odonto", "logomarca da empresa 2 ausente");
+      assert(await page.getByText("Pará Frio").count() === 0, "vazou identidade da empresa 1");
+      await page.screenshot({ path: `${SHOTS}/26-identidade-empresa2.png` });
+    });
+    await step("tela de login própria da empresa e retorno a ela ao sair", async () => {
+      await page.context().clearCookies();
+      await page.goto(`${BASE}/entrar/refrigeracao-para`);
+      assert(await page.getByTestId("brand-logo").first().getAttribute("alt") === "Pará Frio", "login sem a logomarca da empresa");
+      assert(await cssVar(page, "--color-btn") === PARA.button, "login sem as cores da empresa");
+      await page.screenshot({ path: `${SHOTS}/27-login-empresa.png` });
+      await page.fill("#username", "rui.ref"); await page.fill("#password", "ruisenha12");
+      await Promise.all([page.waitForURL((u) => !u.pathname.startsWith("/entrar") && u.pathname !== "/"), page.click("button[type=submit]")]);
+      assert(await cssVar(page, "--color-btn") === PARA.button, "identidade não carregou logo após o login");
+      await page.getByRole("button", { name: "Sair" }).first().click();
+      await page.waitForURL(/\/entrar\/refrigeracao-para$/);
+      const r = await page.goto(`${BASE}/entrar/empresa-que-nao-existe`);
+      assert(r?.status() === 404, "endereço inexistente deveria retornar 404");
+    });
+    await step("painel do administrador geral permanece com a identidade Marktvision (inclusive após visitar a empresa)", async () => {
+      await login(page, "admin", "admin-e2e-2026");
+      assert(await page.locator("style[data-mv-brand]").count() === 0 && await cssVar(page, "--color-btn") === "#008c48", "painel do admin geral alterado");
+      await page.selectOption("#company-switch", { label: "Refrigeração Pará" });
+      await page.waitForURL(/\/dashboard$/);
+      assert(await cssVar(page, "--color-btn") === PARA.button, "ambiente da empresa sem a identidade");
+      await page.locator("aside").first().getByRole("link", { name: "Empresas" }).click();
+      await page.waitForURL(/\/admin\/empresas$/);
+      assert(await page.locator("style[data-mv-brand]").count() === 0 && await cssVar(page, "--color-btn") === "#008c48", "identidade da empresa vazou para o painel do admin geral");
+      await page.selectOption("#company-switch", { label: "Plataforma (todas as empresas)" });
+      await page.waitForURL(/\/admin\/empresas$/);
+    });
+    await step("admin da empresa só personaliza após liberação do administrador geral", async () => {
+      await login(page, "paula.ref", "paulasenha1");
+      assert(!(await navLabels(page)).includes("Identidade visual"), "menu não deveria ter Identidade visual sem liberação");
+      await page.goto(`${BASE}/identidade-visual`); await page.waitForURL(/acesso-negado/);
+      await login(page, "admin", "admin-e2e-2026");
+      await page.goto(`${BASE}/admin/empresas`);
+      await page.getByRole("link", { name: "Refrigeração Pará" }).click();
+      await page.getByRole("switch", { name: "Identidade visual", exact: true }).click();
+      await page.waitForFunction(() => document.querySelector('[role=switch][aria-label="Identidade visual"]')?.getAttribute("aria-checked") === "true");
+      await page.waitForTimeout(600);
+      await login(page, "paula.ref", "paulasenha1");
+      await page.locator("aside").first().getByRole("link", { name: "Identidade visual" }).click();
+      await page.getByTestId("branding-preview").waitFor();
+      assert(await page.locator("#b-slug").isDisabled(), "admin da empresa não deveria alterar o endereço");
+      await page.fill("#c-primary", "#15803d");
+      await page.getByRole("button", { name: "Salvar personalização" }).click();
+      await page.getByRole("status").filter({ hasText: "Identidade visual salva" }).waitFor();
+      await page.reload();
+      assert(await cssVar(page, "--color-brand") === "#15803d", "alteração própria não aplicada");
+      await login(page, "alfa.vend", "alfavend12");
+      assert(await cssVar(page, "--color-brand") === ALFA.primary, "alteração de uma empresa afetou a outra");
+    });
+    await step("restaurar o padrão original da empresa 2 volta à identidade Marktvision", async () => {
+      await login(page, "admin", "admin-e2e-2026");
+      await page.goto(`${BASE}/admin/empresas`);
+      await page.getByRole("link", { name: "Clínica Alfa" }).click();
+      await page.getByRole("link", { name: "Identidade Visual" }).click();
+      page.once("dialog", (d) => d.accept());
+      await page.getByRole("button", { name: "Restaurar padrão original" }).click();
+      await page.getByRole("status").filter({ hasText: "Padrão Marktvision restaurado" }).waitFor();
+      await login(page, "alfa.vend", "alfavend12");
+      assert(await page.locator("style[data-mv-brand]").count() === 0 && await cssVar(page, "--color-btn") === "#008c48", "padrão não restaurado");
+      assert(await page.getByTestId("brand-logo").count() === 0, "logomarca deveria ter sido removida");
+      await login(page, "sara.ref", "sarasenha1");
+      assert(await cssVar(page, "--color-btn") === PARA.button, "restaurar uma empresa afetou a outra");
+    });
     await browser.close();
   } finally {
     try { process.kill(-server.pid!); } catch {}

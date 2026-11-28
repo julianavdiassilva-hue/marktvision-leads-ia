@@ -158,7 +158,23 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Simulação de ATUALIZAÇÃO de uma instalação existente: backup, nova versão, migrações 0009/0010 aplicadas, dados preservados, 4 usuários simultâneos | ✅ |
 | Pendências conhecidas: `xlsx` 0.18.5 tem alerta de segurança na LEITURA de arquivos — a leitura ocorre só no navegador do usuário e o servidor só GERA planilhas (não afetado) | ⚠️ registrado |
 
- (Windows + Docker) — ✅ preparada (26/11/2026)
+## Identidade visual (White Label) — ✅ concluída (28/11/2026)
+| Item | Status |
+|---|---|
+| Aba "Identidade Visual" no cadastro/edição da empresa (administrador geral) | ✅ |
+| Logomarca: enviar, substituir, remover (PNG/JPG/WEBP até 1 MB, validada pelo conteúdo; SVG recusado por segurança) | ✅ |
+| Cores principal, secundária, botões, menu lateral, fundo e textos — seletor visual + hexadecimal | ✅ |
+| Nome exibido (menu, cabeçalho, título das abas, login) | ✅ |
+| Pré-visualização em tempo real com as mesmas variáveis CSS do sistema | ✅ |
+| Salvar e Restaurar padrão original | ✅ |
+| Contraste: textos de botões e menu ajustados automaticamente; combinações ilegíveis bloqueadas com explicação | ✅ |
+| Aplicação: login próprio `/entrar/<empresa>`, dashboard, menu, cabeçalho, campanhas, contatos/leads, conversas, CRM, relatórios (inclusive PDF), botões | ✅ |
+| Ao sair ou expirar a sessão, o usuário volta à tela de login da própria empresa | ✅ |
+| Isolamento: `company_id` no serviço + RLS no banco; painel do administrador geral sempre com a identidade Marktvision | ✅ |
+| Permissão "Identidade visual" para o admin da empresa (desligada até o administrador geral liberar) | ✅ |
+| Persistência no banco (incluída nos backups) | ✅ |
+
+## Instalação local gratuita (Windows + Docker) — ✅ preparada (26/11/2026)
 | Item | Status | Evidência |
 |---|---|---|
 | docker-compose: aplicação, PostgreSQL 16, Evolution API v2.3.8, backup automático, túnel Cloudflare (temporário ou domínio) | ✅ | conjunto executado com Docker neste ambiente |

@@ -107,6 +107,17 @@ Cada vendedor vê somente os próprios contatos, conversas e negociações; o ad
 
 ---
 
+## 6.1 Identidade visual de cada empresa (White Label)
+1. Administrador geral: **Empresas** → nome da empresa → aba **Identidade Visual**.
+2. Envie a **logomarca** (PNG, JPG ou WEBP, até 1 MB — de preferência PNG com fundo transparente), escolha as **cores** (seletor ou código como `#008C48`) e o **nome exibido**. A pré-visualização muda na hora.
+3. Clique em **Salvar personalização**. Todos os usuários da empresa passam a ver a nova identidade na próxima tela que abrirem. **Restaurar padrão original** volta ao visual Marktvision.
+4. Cada empresa tem uma **tela de login própria**: `http://ENDERECO/entrar/nome-da-empresa` (o endereço aparece na aba, com botão **Copiar**). Envie aos vendedores.
+5. Para o administrador da empresa personalizar sozinho: ligue **Identidade visual** em **Funcionalidades liberadas**. O item aparece no menu dele.
+- Combinações ilegíveis (texto claro em fundo claro, fundo escuro etc.) são bloqueadas com a explicação. Textos dos botões e do menu se ajustam automaticamente.
+- O painel do administrador geral sempre mantém o visual Marktvision.
+
+---
+
 ## 7. Conectar o WhatsApp por QR Code
 1. Entre como administrador da empresa → **WhatsApp Comercial** → **Conectar WhatsApp**.
 2. Dê um nome (ex.: "Comercial") → **Gerar QR Code**.

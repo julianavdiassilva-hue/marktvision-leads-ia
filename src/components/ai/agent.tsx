@@ -41,11 +41,11 @@ export function AgentSettings({ s, provider, canEdit }: { s: AiSettings; provide
           {field("greetingMessage", "Mensagem inicial", 2, "Ex.: Olá! Sou a Lia, assistente virtual da Clima Frio.")}
           {field("closingMessage", "Mensagem ao transferir/encerrar", 2, "Ex.: Vou chamar um especialista, um momento!")}
         </div>
-        <label className="mt-4 flex items-center gap-2.5 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-[#008C48]" disabled={!canEdit} checked={f.autoReplyNew} onChange={(e) => setF({ ...f, autoReplyNew: e.target.checked })} />
+        <label className="mt-4 flex items-center gap-2.5 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-brand" disabled={!canEdit} checked={f.autoReplyNew} onChange={(e) => setF({ ...f, autoReplyNew: e.target.checked })} />
           Atender automaticamente novos contatos que chegarem pelo WhatsApp (campanhas seguem o modo escolhido em cada campanha)</label>
       </Panel>
       <Panel title="Horário de atendimento da IA">
-        <label className="flex items-center gap-2.5 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-[#008C48]" disabled={!canEdit} checked={f.hoursEnabled} onChange={(e) => setF({ ...f, hoursEnabled: e.target.checked })} />Restringir a IA a um horário</label>
+        <label className="flex items-center gap-2.5 text-[15px]"><input type="checkbox" className="h-4 w-4 accent-brand" disabled={!canEdit} checked={f.hoursEnabled} onChange={(e) => setF({ ...f, hoursEnabled: e.target.checked })} />Restringir a IA a um horário</label>
         {f.hoursEnabled && (
           <div className="mt-3 grid gap-4 lg:grid-cols-[1fr_140px_140px]">
             <div><p className="label">Dias</p><div className="flex flex-wrap gap-1.5">{DAYS.map((d, i) => (

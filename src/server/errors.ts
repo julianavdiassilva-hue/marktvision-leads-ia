@@ -25,6 +25,7 @@ const UNIQUE_MESSAGES: Record<string, string> = {
   contacts_phone_uq: "Já existe um contato com este telefone.",
   contact_lists_name_uq: "Já existe uma lista com este nome.",
   tags_name_uq: "Já existe uma etiqueta com este nome.",
+  companies_slug_uq: "Este endereço de acesso já está em uso por outra empresa. Escolha outro.",
 };
 
 /** Converte qualquer erro em AppError com mensagem amigável em português. */

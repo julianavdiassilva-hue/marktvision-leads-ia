@@ -69,6 +69,12 @@ Sem tabelas novas: dashboard e relatórios são consultas sobre `contacts`, `cam
 ## 0010 — Índices de relatórios
 Índices para dashboard e relatórios com grande volume: `messages(contact_id, direction)`, `messages(campaign_id)`, `opportunities(campaign_id)`, `opportunities(company_id, status, data de fechamento)`, `sales(campaign_id)`, `sales(contact_id)`, `contacts(company_id, source)`.
 
+## 0011 — Identidade visual (White Label)
+- `features`: nova funcionalidade `branding` ("Identidade visual"), **desligada por padrão** (não incluída no plano Completo; o administrador geral libera por empresa).
+- `companies.slug` (único, gerado do nome sem acentos; trigger `companies_set_slug`): endereço da tela de login `/entrar/<slug>`.
+- `company_branding` (PK `company_id`): `display_name`, `primary_color`, `secondary_color`, `button_color`, `sidebar_color`, `background_color`, `text_color` (hex `#rrggbb`, nulo = padrão), `logo_key`, `logo_version`, `updated_by`. RLS `tenant_isolation`.
+- `company_files` (PK `company_id, key`): arquivos por empresa (`mime_type`, `size_bytes`, `sha256`, `content`). RLS `tenant_isolation`.
+
 ## Triggers
 - `set_updated_at` em tabelas editáveis.
 - `create_default_pipeline` (após inserir empresa): funil com 9 etapas (Novo lead … Venda realizada, Perdido) + `ai_settings`.

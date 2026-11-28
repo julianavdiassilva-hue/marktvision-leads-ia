@@ -34,7 +34,10 @@ export async function requestMeta() {
 // ----- Guardas de página (redirecionam; ações usam as guardas de ../guards) -----
 export async function requirePage(): Promise<AuthContext> {
   const ctx = await getAuth();
-  if (!ctx) redirect("/login?expirada=1");
+  if (!ctx) {
+    const slug = (await cookies()).get("mv_empresa")?.value;
+    redirect(slug && /^[a-z0-9-]{2,60}$/.test(slug) ? `/entrar/${slug}?expirada=1` : "/login?expirada=1");
+  }
   return ctx;
 }
 export async function requirePlatformPage() {

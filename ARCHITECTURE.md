@@ -28,6 +28,13 @@ services (src/server/services) ── guardas (assertCompany/assertFeature/...) 
 3. `withScope` abre transação e define `app.company_id`, `app.user_id`, `app.platform_admin`, `app.system`.
 4. A aplicação conecta como `mv_app` (não superusuário): as políticas RLS bloqueiam leitura/escrita de outra empresa mesmo com SQL incorreto.
 
+## Identidade visual (White Label)
+- Tabela `company_branding` (uma linha por empresa; sem linha = padrão Marktvision) e arquivos em `company_files` — ambas com `company_id` + RLS `tenant_isolation`.
+- Armazenamento: `src/server/storage.ts` (driver "database": entra nos backups e respeita o RLS; interface put/get/remove pronta para um driver S3/R2 com prefixo por empresa).
+- Cores → `src/lib/theme.ts` calcula variáveis CSS (`--color-brand`, `--color-btn`, `--color-sidebar`, `--color-page`…) com contraste automático; `<BrandStyle>` injeta `:root{...}` no layout. Padrões em `globals.css` (@theme) = identidade Marktvision.
+- Aplicação: layout `(app)` carrega a marca da empresa ativa da sessão; o painel `/admin` nunca recebe a marca (verificado também na navegação do navegador). Login próprio: `/entrar/<slug>`; logomarca pública: `/api/marca/<empresa>/logo` (somente PNG/JPG/WEBP validados pelo conteúdo).
+- Permissão: administrador geral edita qualquer empresa; admin da empresa só a própria e só com a funcionalidade `branding` liberada.
+
 ## Fluxo integrado de dados
 ```
 Google Places / Planilha / Manual / WhatsApp recebido
