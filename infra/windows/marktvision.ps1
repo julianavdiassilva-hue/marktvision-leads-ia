@@ -148,17 +148,20 @@ function Abrir-Navegador {
   Start-Process "http://localhost:$porta" | Out-Null
 }
 function Atalho-AreaDeTrabalho {
-  # Atalho "Marktvision Leads IA" na Area de Trabalho: liga o sistema (se estiver parado) e abre o navegador
+  # Atalho "CRM MARKTVISION" (com a logomarca) na Area de Trabalho: liga o sistema (se estiver parado) e abre o navegador
   try {
     $desk = [Environment]::GetFolderPath("Desktop")
+    $antigo = Join-Path $desk "Marktvision Leads IA.lnk"; if (Test-Path $antigo) { Remove-Item $antigo -ErrorAction SilentlyContinue }
     $ws = New-Object -ComObject WScript.Shell
-    $s = $ws.CreateShortcut((Join-Path $desk "Marktvision Leads IA.lnk"))
+    $s = $ws.CreateShortcut((Join-Path $desk "CRM MARKTVISION.lnk"))
     $s.TargetPath = Join-Path $Raiz "ABRIR_MARKTVISION.bat"
     $s.WorkingDirectory = $Raiz
     $s.WindowStyle = 7
-    $s.Description = "Abrir a Marktvision Leads IA"
+    $s.Description = "Abrir o CRM MARKTVISION"
+    $icone = Join-Path $Raiz "infra\windows\crm-marktvision.ico"
+    if (Test-Path $icone) { $s.IconLocation = "$icone,0" }
     $s.Save()
-    Info "Atalho 'Marktvision Leads IA' criado na Area de Trabalho."
+    Info "Atalho 'CRM MARKTVISION' criado na Area de Trabalho."
   } catch { Aviso "Nao foi possivel criar o atalho na Area de Trabalho. Use ABRIR_MARKTVISION.bat." }
 }
 function Atalho-Inicializacao($ativar) {
@@ -171,6 +174,7 @@ function Atalho-Inicializacao($ativar) {
     $s.Arguments = "auto"
     $s.WorkingDirectory = $Raiz
     $s.WindowStyle = 7
+    $ic = Join-Path $Raiz "infra\windows\crm-marktvision.ico"; if (Test-Path $ic) { $s.IconLocation = "$ic,0" }
     $s.Save()
     Info "Inicio automatico ATIVADO: o sistema sobe sozinho quando voce entrar no Windows."
   } elseif (Test-Path $lnk) { Remove-Item $lnk; Info "Inicio automatico desativado." }
@@ -217,8 +221,8 @@ function Instalar {
   Atalho-Inicializacao ($r -match '^[sS]')
   Mostrar-Enderecos
   Atalho-AreaDeTrabalho
-  Titulo "Instalacao concluida"
-  Info "Para abrir o sistema depois: atalho 'Marktvision Leads IA' na Area de Trabalho (ou http://localhost:3000 no navegador)."
+  Titulo "CRM MARKTVISION - instalacao concluida"
+  Info "Para abrir o sistema depois: atalho 'CRM MARKTVISION' na Area de Trabalho (ou http://localhost:3000 no navegador)."
   Info "Entre com o login e a senha do administrador geral que voce acabou de criar."
   Abrir-Navegador
 }
@@ -339,7 +343,11 @@ try {
   switch ($Acao) {
     "instalar"   { Instalar }
     "iniciar"    { Garantir-Docker; Compose up -d; Aguardar-App; Mostrar-Enderecos }
-    "abrir"      { Garantir-Docker; Compose up -d; Aguardar-App; Abrir-Navegador }
+    "abrir"      {
+      Garantir-Docker; Compose up -d; Aguardar-App
+      if (-not (Test-Path (Join-Path ([Environment]::GetFolderPath("Desktop")) "CRM MARKTVISION.lnk"))) { Atalho-AreaDeTrabalho }
+      Abrir-Navegador
+    }
     "parar"      { Garantir-Docker; & docker compose --profile remoto --profile dominio stop; Info "Sistema parado. Os dados continuam salvos." }
     "reiniciar"  { Garantir-Docker; Compose restart; Aguardar-App; Mostrar-Enderecos }
     "backup"     { Garantir-Docker; Backup-Agora "manual" }
