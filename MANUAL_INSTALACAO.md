@@ -21,8 +21,11 @@ Programas gratuitos usados (o instalador cuida deles): **Docker Desktop** (gratu
 
 ## 2. Instalação (uma única vez)
 1. No GitHub, abra o repositório `julianavdiassilva-hue/marktvision-leads-ia` → botão verde **Code** → **Download ZIP**.
-2. Extraia o ZIP em `C:\Marktvision` (a pasta deve conter `INSTALAR.bat`).
-3. Dê **dois cliques em `INSTALAR.bat`**.
+2. **Extraia o ZIP inteiro antes de executar qualquer arquivo** — não abra o `INSTALAR.bat` de dentro do ZIP (o Windows/WinRAR copia só aquele arquivo para uma pasta temporária e a instalação falha):
+   - Windows: clique com o botão direito no ZIP → **Extrair tudo...** → destino `C:\Marktvision` → **Extrair**.
+   - WinRAR: botão direito no ZIP → **Extrair para...** → `C:\Marktvision` → OK.
+   - Será criada a pasta `C:\Marktvision\marktvision-leads-ia-main`, com o `INSTALAR.bat` e as pastas `infra`, `src` etc.
+3. Abra a pasta extraída e dê **dois cliques em `INSTALAR.bat`**.
    - Se o Docker Desktop não estiver instalado, ele será instalado. **Reinicie o computador**, abra o Docker Desktop uma vez (aceite os termos; não é preciso criar conta) e rode `INSTALAR.bat` de novo.
    - Pode aparecer uma janela de login do GitHub: entre com a sua conta (serve para receber atualizações).
    - A primeira montagem leva de **5 a 15 minutos**.
