@@ -32,7 +32,7 @@ Programas gratuitos usados (o instalador cuida deles): **Docker Desktop** (gratu
 4. O instalador pede o **login e a senha do administrador geral** (a senha não aparece enquanto você digita). Não há senha padrão: só existe a que você criar.
 5. Ele pede permissão de administrador do Windows para liberar o acesso da rede local no Firewall — clique em **Sim**.
 6. Responda se quer que o sistema **inicie sozinho ao ligar o computador** (recomendado: S).
-7. Ao final aparecem os **endereços de acesso** (também salvos no arquivo `ENDERECOS.txt`).
+7. Ao final o sistema **abre sozinho no navegador** (`http://localhost:3000`), é criado o atalho **Marktvision Leads IA** na Área de Trabalho e aparecem os **endereços de acesso** (também salvos no arquivo `ENDERECOS.txt`).
 
 As senhas internas (banco de dados, servidor do WhatsApp, chave de criptografia) são **geradas automaticamente**, únicas para o seu computador, e ficam no arquivo `.env`, acessível só pelo seu usuário do Windows. **Não compartilhe nem apague o `.env`.**
 
@@ -41,6 +41,7 @@ As senhas internas (banco de dados, servidor do WhatsApp, chave de criptografia)
 ## 3. Uso no dia a dia (dois cliques)
 | Arquivo | Para que serve |
 |---|---|
+| `ABRIR_MARKTVISION.bat` (atalho **Marktvision Leads IA** na Área de Trabalho) | Liga o sistema, se estiver parado, e abre no navegador |
 | `INICIAR_MARKTVISION.bat` | Liga o sistema e mostra os endereços |
 | `PARAR_MARKTVISION.bat` | Desliga (os dados continuam salvos) |
 | `REINICIAR_MARKTVISION.bat` | Reinicia todos os serviços |

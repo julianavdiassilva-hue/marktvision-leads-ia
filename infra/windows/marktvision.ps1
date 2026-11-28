@@ -142,6 +142,25 @@ function Backup-Agora($motivo) {
   Info "Recomendado: copie a pasta backups para um pendrive ou nuvem periodicamente."
 }
 
+function Abrir-Navegador {
+  $porta = (Ler-Env)["APP_PORT"]; if (-not $porta) { $porta = "3000" }
+  Info "Abrindo o sistema no navegador: http://localhost:$porta"
+  Start-Process "http://localhost:$porta" | Out-Null
+}
+function Atalho-AreaDeTrabalho {
+  # Atalho "Marktvision Leads IA" na Area de Trabalho: liga o sistema (se estiver parado) e abre o navegador
+  try {
+    $desk = [Environment]::GetFolderPath("Desktop")
+    $ws = New-Object -ComObject WScript.Shell
+    $s = $ws.CreateShortcut((Join-Path $desk "Marktvision Leads IA.lnk"))
+    $s.TargetPath = Join-Path $Raiz "ABRIR_MARKTVISION.bat"
+    $s.WorkingDirectory = $Raiz
+    $s.WindowStyle = 7
+    $s.Description = "Abrir a Marktvision Leads IA"
+    $s.Save()
+    Info "Atalho 'Marktvision Leads IA' criado na Area de Trabalho."
+  } catch { Aviso "Nao foi possivel criar o atalho na Area de Trabalho. Use ABRIR_MARKTVISION.bat." }
+}
 function Atalho-Inicializacao($ativar) {
   $startup = [Environment]::GetFolderPath("Startup")
   $lnk = Join-Path $startup "Marktvision Leads IA.lnk"
@@ -197,8 +216,11 @@ function Instalar {
   $r = Read-Host "  Iniciar o sistema automaticamente ao ligar o computador? (S/N)"
   Atalho-Inicializacao ($r -match '^[sS]')
   Mostrar-Enderecos
+  Atalho-AreaDeTrabalho
   Titulo "Instalacao concluida"
-  Info "Abra o endereco acima no navegador e entre com o administrador geral."
+  Info "Para abrir o sistema depois: atalho 'Marktvision Leads IA' na Area de Trabalho (ou http://localhost:3000 no navegador)."
+  Info "Entre com o login e a senha do administrador geral que voce acabou de criar."
+  Abrir-Navegador
 }
 
 function Atualizar {
@@ -215,6 +237,7 @@ function Atualizar {
   Compose up -d
   Aguardar-App
   Info "Atualizado para: $(git log -1 --format='%h %s')"
+  Atalho-AreaDeTrabalho
 }
 
 function Restaurar {
@@ -316,6 +339,7 @@ try {
   switch ($Acao) {
     "instalar"   { Instalar }
     "iniciar"    { Garantir-Docker; Compose up -d; Aguardar-App; Mostrar-Enderecos }
+    "abrir"      { Garantir-Docker; Compose up -d; Aguardar-App; Abrir-Navegador }
     "parar"      { Garantir-Docker; & docker compose --profile remoto --profile dominio stop; Info "Sistema parado. Os dados continuam salvos." }
     "reiniciar"  { Garantir-Docker; Compose restart; Aguardar-App; Mostrar-Enderecos }
     "backup"     { Garantir-Docker; Backup-Agora "manual" }
