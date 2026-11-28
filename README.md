@@ -6,6 +6,9 @@ Documentação: `CLAUDE.md` (regras) · `PROJECT_SPEC.md` · `ARCHITECTURE.md` �
 ## Instalação no Windows (servidor próprio, sem custo de hospedagem)
 Veja **MANUAL_INSTALACAO.md**: dois cliques em `INSTALAR.bat`.
 
+## Publicação na internet com domínio próprio
+Veja **DEPLOY.md**: opções e custos, contas, registros DNS e `sudo ./servidor.sh instalar` (VPS Linux com HTTPS automático).
+
 ## Requisitos (desenvolvimento)
 Node.js 22+, PostgreSQL 16+.
 

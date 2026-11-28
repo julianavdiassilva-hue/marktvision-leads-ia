@@ -83,6 +83,16 @@ Integração: endereço gerado sem acentos e único · duas empresas personaliza
 E2E: cadastro da 2ª empresa · editor com logomarca, hex e pré-visualização (variável CSS conferida) para as duas empresas · cores ilegíveis bloqueadas · vendedora da empresa 1 vê cores/logomarca/nome em dashboard, contatos, conversas e CRM (cor do menu e do fundo conferidas) · vendedor da empresa 2 vê só a dele · login próprio da empresa, identidade imediata após o login e retorno a ele ao sair · endereço inexistente = 404 · painel do admin geral inalterado mesmo após navegar a partir do ambiente da empresa · liberação da permissão e personalização pelo admin da empresa sem afetar a outra · restaurar padrão.
 Teste antigo ajustado: o plano "Completo" libera todas as funcionalidades exceto "Identidade visual" (regra do requisito: o administrador geral libera).
 
+## Publicação (servidor simulado com `servidor.sh instalar`, modo HTTPS, domínio localhost)
+- Instalação sem interação: senhas geradas, `.env` com permissão 600, serviços saudáveis, administrador criado ✅
+- HTTPS (HTTP/2) com HSTS/CSP; HTTP redireciona (308) para HTTPS ✅
+- Somente 80/443 publicados; aplicação em 127.0.0.1:3000 (fechada no IP externo); banco e Evolution sem portas ✅
+- Cookie de sessão `Secure` + `HttpOnly`; 3 vendedores simultâneos pela tela de login da empresa ✅
+- `X-Forwarded-For` falsificado ignorado: tentativa de login registrada com o IP real ✅
+- Queda forçada do processo (kill -9) → reinício automático e saúde restabelecida ✅
+- `backup`, `restaurar` (dados conferidos), `status`, `definir` (chave inválida recusada) ✅
+- Não executado aqui: instalação do Docker por apt e firewall ufw (Docker já presente; `SEM_FIREWALL=1`), certificado real do Let's Encrypt e túnel real (exigem domínio), `atualizar` via git no servidor.
+
 ## Instalação local (Docker) — executada neste ambiente
 Conjunto completo (aplicação + PostgreSQL + Evolution v2.3.8 + backup) com Docker Compose: saúde dos serviços, usuário de banco sem superpoderes, migrações, criação de administrador (senha fraca recusada), backup automático, 3 vendedores simultâneos isolados, sessão do WhatsApp criada automaticamente, persistência após desligar/religar ✅. Não executado aqui: scripts .bat/PowerShell (não há Windows) e leitura real do QR (rede do WhatsApp bloqueada).
 

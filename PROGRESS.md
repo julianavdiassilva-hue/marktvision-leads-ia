@@ -174,6 +174,15 @@ Legenda: ✅ concluído e testado · 🔶 estrutura pronta (banco/permissão), t
 | Permissão "Identidade visual" para o admin da empresa (desligada até o administrador geral liberar) | ✅ |
 | Persistência no banco (incluída nos backups) | ✅ |
 
+## Publicação com domínio próprio — ✅ preparada (28/11/2026)
+| Item | Status |
+|---|---|
+| Análise de hospedagem e custos (DEPLOY.md): computador + Cloudflare Tunnel (só domínio) ou VPS Linux | ✅ |
+| `servidor.sh` (instalar, iniciar, parar, reiniciar, status, logs, backup, restaurar, atualizar, admin, dominio, definir) | ✅ testado em servidor simulado |
+| HTTPS automático (Caddy + Let's Encrypt, HSTS) ou Cloudflare Tunnel; aplicação presa a 127.0.0.1; firewall 22/80/443 | ✅ |
+| `docker-compose.yml`: novo serviço opcional `https` + `APP_BIND`/`COOKIE_SECURE` configuráveis (padrões iguais aos anteriores no Windows) | ✅ |
+| Emissão real de certificado e túnel real | ⏳ dependem do domínio registrado |
+
 ## Instalação local gratuita (Windows + Docker) — ✅ preparada (26/11/2026)
 | Item | Status | Evidência |
 |---|---|---|

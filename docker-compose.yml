@@ -55,12 +55,13 @@ services:
     image: marktvision-app:local
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-3000}:3000"
+      # No servidor (VPS) APP_BIND=127.0.0.1: a aplicação só é acessível pelo HTTPS (serviço "https").
+      - "${APP_BIND:-0.0.0.0}:${APP_PORT:-3000}:3000"
     environment:
       DATABASE_URL: postgres://mv_app:${DB_APP_PASSWORD}@postgres:5432/marktvision
       DATABASE_OWNER_URL: postgres://mv_owner:${DB_OWNER_PASSWORD}@postgres:5432/marktvision
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Execute INSTALAR.bat}
-      COOKIE_SECURE: "false"
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       APP_URL: ${APP_URL:-http://localhost:3000}
       EVOLUTION_API_URL: http://evolution:8080
       EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
@@ -130,7 +131,28 @@ services:
     depends_on: [app]
     logging: *logging
 
+  # Servidor na internet (VPS) com domínio próprio: HTTPS automático (Let's Encrypt) e renovação sozinha.
+  # Único serviço exposto à internet (portas 80/443). Requer DOMINIO no .env e o registro DNS apontando para o servidor.
+  https:
+    image: caddy:2.10.2-alpine
+    profiles: ["https"]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMINIO: ${DOMINIO:-}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+    logging: *logging
+
 volumes:
+  caddy_data:
+  caddy_config:
   pgdata:
   evolution_sessions:
   ollama_models:

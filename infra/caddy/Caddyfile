@@ -1,0 +1,15 @@
+# Marktvision Leads IA — HTTPS do servidor (VPS).
+# O certificado é emitido e renovado automaticamente (Let's Encrypt) para o domínio em DOMINIO.
+{
+	admin off
+}
+
+{$DOMINIO} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	# Caddy informa X-Forwarded-Proto=https e o IP real do visitante (sem confiar em cabeçalhos enviados pelo navegador).
+	reverse_proxy app:3000
+}
